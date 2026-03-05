@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ThemeProvider }               from './contexts/ThemeContext'
-import { LangProvider, useLang }       from './contexts/LangContext'
+import { LangProvider }                from './contexts/LangContext'
 import { AuthProvider, useAuth }       from './contexts/AuthContext'
 import { ProfileProvider, useProfile } from './contexts/ProfileContext'
 import { WorkoutProvider }             from './contexts/WorkoutContext'
@@ -18,23 +18,58 @@ function Router() {
   const { authed, loading: authLoading } = useAuth()
   const { hasProfile, loading: profLoading } = useProfile()
 
-  const [screen,     setScreen]     = useState('splash')
-  const [splashDone, setSplashDone] = useState(false)
+  const [screen,        setScreen]        = useState('splash')
+  const [splashDone,    setSplashDone]    = useState(false)
+  const [loadingDone,   setLoadingDone]   = useState(false)
 
-  const [langPicked] = useState(
-    () => !!localStorage.getItem('athlera_lang')
-  )
+  const langPicked = !!localStorage.getItem('athlera_lang')
 
+  // Marquer quand auth + profile ont fini de charger
   useEffect(() => {
-    if (!splashDone) return
-    if (!langPicked) { setScreen('langpicker'); return }
-    // Encore en train de charger → rester sur splash
-    if (authLoading || profLoading) { setScreen('splash'); return }
-    if (!authed) { setScreen('auth'); return }
-    if (!hasProfile) { setScreen('onboarding'); return }
-    setScreen('dashboard')
-  }, [splashDone, langPicked, authed, hasProfile, authLoading, profLoading])
+    if (!authLoading && !profLoading) {
+      setLoadingDone(true)
+    }
+  }, [authLoading, profLoading])
 
+  // Naviguer seulement quand splash ET loading sont tous les deux terminés
+  useEffect(() => {
+    if (!splashDone || !loadingDone) return
+
+    if (!langPicked)   { setScreen('langpicker');  return }
+    if (!authed)       { setScreen('auth');         return }
+    if (!hasProfile)   { setScreen('onboarding');   return }
+    setScreen('dashboard')
+  }, [splashDone, loadingDone, authed, hasProfile, langPicked])
+
+  const navigate = (dest) => setScreen(dest)
+
+  if (screen === 'splash')     return <SplashPage        onDone={() => setSplashDone(true)} />
+  if (screen === 'langpicker') return <LangPickerPage    onDone={() => navigate('auth')} />
+  if (screen === 'auth')       return <AuthPage          onDone={(needsOnboarding) => navigate(needsOnboarding ? 'onboarding' : 'dashboard')} />
+  if (screen === 'onboarding') return <OnboardingPage    onDone={() => navigate('dashboard')} />
+  if (screen === 'dashboard')  return <DashboardPage     onNavigate={navigate} />
+  if (screen === 'generate')   return <GeneratePage      onDone={() => navigate('workout')} onBack={() => navigate('dashboard')} />
+  if (screen === 'workout')    return <WorkoutPage       onBack={() => navigate('dashboard')} onNew={() => navigate('generate')} />
+  if (screen === 'profile')    return <ProfilePage       onBack={() => navigate('dashboard')} />
+  if (screen === 'custom')     return <CustomWorkoutPage onBack={() => navigate('dashboard')} onSaved={() => navigate('dashboard')} />
+  return null
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <LangProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <WorkoutProvider>
+              <Router />
+            </WorkoutProvider>
+          </ProfileProvider>
+        </AuthProvider>
+      </LangProvider>
+    </ThemeProvider>
+  )
+}
   const navigate = (dest) => setScreen(dest)
 
   if (screen === 'splash')     return <SplashPage        onDone={() => setSplashDone(true)} />
