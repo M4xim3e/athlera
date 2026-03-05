@@ -19,10 +19,9 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 
   const [view, setView] = useState('main')
 
-  const handleNav = (dest) => { onClose(); onNavigate?.(dest) }
+  const handleNav     = (dest) => { onClose(); onNavigate?.(dest) }
   const handleSignOut = async () => { onClose(); await signOut() }
-
-  const currentTheme = THEMES.find(th => th.id === mode) || THEMES[0]
+  const currentTheme  = THEMES.find(th => th.id === mode) || THEMES[0]
 
   return (
     <>
@@ -34,12 +33,10 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 
       <div style={{
         position: 'fixed', top: 0, right: 0,
-        width: '78%', maxWidth: 320,
-        height: '100dvh',
+        width: '78%', maxWidth: 320, height: '100dvh',
         background: 'var(--surface)',
         borderLeft: '1px solid var(--border)',
-        zIndex: 50,
-        display: 'flex', flexDirection: 'column',
+        zIndex: 50, display: 'flex', flexDirection: 'column',
         animation: 'slideRight 0.28s cubic-bezier(0.16,1,0.3,1)',
         boxShadow: 'var(--shd-md)',
       }}>
@@ -84,17 +81,19 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 
         {/* Vue principale */}
         {view === 'main' && (
-          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-            <MenuItem icon="user" label={t('menuProf')} onClick={() => handleNav('profile')} />
+            <MenuItem icon={<Icons.user size={18} color="var(--txt-sub)" />}
+              label={t('menuProf')} onClick={() => handleNav('profile')} />
 
             <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
 
             {/* Thème */}
-            <div onClick={() => setView('theme')} style={{
+            <button onClick={() => setView('theme')} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '13px 14px', borderRadius: 14, cursor: 'pointer',
-              transition: 'background 0.14s',
+              padding: '13px 14px', borderRadius: 14,
+              background: 'transparent', border: 'none', cursor: 'pointer', width: '100%',
+              fontFamily: 'inherit',
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-up)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -102,16 +101,16 @@ export default function BurgerMenu({ onClose, onNavigate }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <Icons.palette size={18} color="var(--txt-sub)" />
                 <div>
-                  <div style={{ fontSize: 15, color: 'var(--txt)', fontWeight: 600 }}>
-                    {t('menuTheme')}
+                  <div style={{ fontSize: 15, color: 'var(--txt)', fontWeight: 600, textAlign: 'left' }}>
+                    Thème
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--txt-sub)', marginTop: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--txt-sub)', marginTop: 1, textAlign: 'left' }}>
                     {currentTheme.label}
                   </div>
                 </div>
               </div>
-              <Icons.chevRight size={14} color="var(--txt-muted)" />
-            </div>
+              <Icons.chevRight size={14} color="var(--txt-sub)" />
+            </button>
 
             {/* Langue */}
             <div style={{
@@ -128,8 +127,7 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                 {['fr', 'en'].map(l => (
                   <button key={l} onClick={() => setLanguage(l)} style={{
                     padding: '5px 12px', borderRadius: 999,
-                    fontSize: 12, fontWeight: 700,
-                    cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                     background: lang === l ? 'var(--acc)' : 'var(--surface-up)',
                     color:      lang === l ? 'var(--txt-inv)' : 'var(--txt-sub)',
                     border: `1px solid ${lang === l ? 'var(--acc)' : 'var(--border)'}`,
@@ -143,7 +141,8 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 
             <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
 
-            <MenuItem icon="logout" label={t('menuOut')} onClick={handleSignOut} danger />
+            <MenuItem icon={<Icons.logout size={18} color="var(--err)" />}
+              label={t('menuOut')} onClick={handleSignOut} danger />
           </div>
         )}
 
@@ -159,45 +158,34 @@ export default function BurgerMenu({ onClose, onNavigate }) {
             </p>
             {THEMES.map(th => (
               <button key={th.id} onClick={() => setTheme(th.id)} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '16px 16px',
+                display: 'flex', alignItems: 'center', gap: 14, padding: '16px',
                 background: mode === th.id ? 'var(--acc-dim)' : 'var(--surface-up)',
                 border: `2px solid ${mode === th.id ? 'var(--acc)' : 'var(--border)'}`,
-                borderRadius: 16, cursor: 'pointer', width: '100%',
+                borderRadius: 16, cursor: 'pointer', width: '100%', fontFamily: 'inherit',
                 transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
-                fontFamily: 'inherit',
               }}>
-                {/* Pastille couleur */}
                 <div style={{
                   width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                   background: th.id === 'black-era' ? '#060606'
-                             : th.id === 'white-era' ? '#F5F5F3'
-                             : '#08040A',
+                             : th.id === 'white-era' ? '#F5F5F3' : '#08040A',
                   border: `2px solid ${
                     th.id === 'black-era' ? '#B8FF52'
-                    : th.id === 'white-era' ? '#FF6B00'
-                    : '#FF2D9B'
+                    : th.id === 'white-era' ? '#FF6B00' : '#FF2D9B'
                   }`,
                   boxShadow: `0 0 10px ${
                     th.id === 'black-era' ? 'rgba(184,255,82,0.3)'
-                    : th.id === 'white-era' ? 'rgba(255,107,0,0.3)'
-                    : 'rgba(255,45,155,0.3)'
+                    : th.id === 'white-era' ? 'rgba(255,107,0,0.3)' : 'rgba(255,45,155,0.3)'
                   }`,
                 }} />
                 <div style={{ textAlign: 'left', flex: 1 }}>
-                  <div style={{
-                    fontSize: 15, fontWeight: 700,
-                    color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)',
-                  }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)' }}>
                     {th.label}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
                     {th.desc}
                   </div>
                 </div>
-                {mode === th.id && (
-                  <Icons.check size={18} color="var(--acc-txt)" />
-                )}
+                {mode === th.id && <Icons.check size={18} color="var(--acc-txt)" />}
               </button>
             ))}
           </div>
@@ -215,7 +203,6 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 }
 
 function MenuItem({ icon, label, onClick, danger }) {
-  const IC = Icons[icon]
   return (
     <button onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 12,
@@ -227,7 +214,7 @@ function MenuItem({ icon, label, onClick, danger }) {
     onMouseEnter={e => e.currentTarget.style.background = danger ? 'rgba(255,69,58,0.07)' : 'var(--surface-up)'}
     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      {IC && <IC size={18} color={danger ? 'var(--err)' : 'var(--txt-sub)'} />}
+      {icon}
       <span style={{ fontSize: 15, fontWeight: 600, color: danger ? 'var(--err)' : 'var(--txt)' }}>
         {label}
       </span>
