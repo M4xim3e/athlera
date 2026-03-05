@@ -1,15 +1,32 @@
 // src/pages/AuthPage.jsx
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
+import { useAuth }   from '../contexts/AuthContext'
+import { useLang }   from '../contexts/LangContext'
 import { getProfile } from '../services/userService'
 import Icons  from '../components/ui/Icons'
 import Button from '../components/ui/Button'
 import Input  from '../components/ui/Input'
 
+const validatePassword = (pass) => {
+  if (pass.length < 8) return 'min8'
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass)) return 'needSpecial'
+  return null
+}
+
+const PASS_ERRORS = {
+  fr: {
+    min8:       'Minimum 8 caractères.',
+    needSpecial:'Au moins un caractère spécial requis (!@#$%...).',
+  },
+  en: {
+    min8:       'Minimum 8 characters.',
+    needSpecial:'At least one special character required (!@#$%...).',
+  },
+}
+
 export default function AuthPage({ onDone }) {
-  const { signIn, signUp, error, clearError, user } = useAuth()
-  const { t } = useLang()
+  const { signIn, signUp, error, clearError } = useAuth()
+  const { t, lang } = useLang()
 
   const [tab,     setTab]     = useState('login')
   const [name,    setName]    = useState('')
@@ -28,9 +45,18 @@ export default function AuthPage({ onDone }) {
 
   const validate = () => {
     const e = {}
-    if (tab === 'register' && !name.trim()) e.name = 'Requis'
-    if (!email.includes('@')) e.email = 'Email invalide'
-    if (pass.length < 6) e.pass = t('passMin')
+    if (tab === 'register' && !name.trim()) {
+      e.name = lang === 'fr' ? 'Requis' : 'Required'
+    }
+    if (!email.includes('@')) {
+      e.email = lang === 'fr' ? 'Email invalide' : 'Invalid email'
+    }
+    if (tab === 'register') {
+      const passErr = validatePassword(pass)
+      if (passErr) e.pass = PASS_ERRORS[lang]?.[passErr] || PASS_ERRORS.fr[passErr]
+    } else {
+      if (pass.length < 1) e.pass = lang === 'fr' ? 'Requis' : 'Required'
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -41,15 +67,21 @@ export default function AuthPage({ onDone }) {
     if (tab === 'login') {
       const res = await signIn(email, pass)
       if (res.ok) {
-        // Vérifie si le profil existe
         const profile = await getProfile(res.userId)
         onDone(!profile?.goal)
       }
     } else {
       const res = await signUp(email, pass, name.trim())
-      if (res.ok) onDone(true) // Nouveau compte → toujours onboarding
+      if (res.ok) onDone(true)
     }
     setLoading(false)
+  }
+
+  const getServerError = () => {
+    if (!error) return null
+    if (error === 'email_used') return lang === 'fr' ? 'Cette adresse email est déjà utilisée.' : 'This email is already in use.'
+    if (error === 'auth_error') return lang === 'fr' ? 'Email ou mot de passe incorrect.' : 'Invalid email or password.'
+    return lang === 'fr' ? 'Une erreur est survenue. Réessayez.' : 'An error occurred. Please try again.'
   }
 
   return (
@@ -78,7 +110,10 @@ export default function AuthPage({ onDone }) {
         <div style={{ background: 'var(--acc)', borderRadius: 14, padding: 9, display: 'flex' }}>
           <Icons.logo size={22} color="var(--txt-inv)" strokeWidth={2.2} />
         </div>
-        <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--acc-txt)', letterSpacing: '0.05em' }}>
+        <span style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: 28, color: 'var(--acc-txt)', letterSpacing: '0.05em',
+        }}>
           ATHLERA
         </span>
       </div>
@@ -93,6 +128,7 @@ export default function AuthPage({ onDone }) {
         transform: visible ? 'translateY(0)' : 'translateY(20px)',
         transition: 'all 0.55s cubic-bezier(0.16,1,0.3,1) 0.1s',
       }}>
+
         {/* Tabs */}
         <div style={{ display: 'flex', background: 'var(--bg-alt)', padding: 4, position: 'relative' }}>
           {[['login', t('signIn')], ['register', t('register')]].map(([v, lbl]) => (
@@ -124,10 +160,15 @@ export default function AuthPage({ onDone }) {
           animation: 'fadeUp 0.22s cubic-bezier(0.16,1,0.3,1)',
         }}>
           <div>
-            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 30, color: 'var(--txt)', lineHeight: 1.05 }}>
+            <h2 style={{
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: 30, color: 'var(--txt)', lineHeight: 1.05,
+            }}>
               {tab === 'login' ? t('welcome') : t('welcomeNew')}
             </h2>
-            <p style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 4 }}>{t('authSub')}</p>
+            <p style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 4 }}>
+              {t('authSub')}
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -136,24 +177,38 @@ export default function AuthPage({ onDone }) {
                 placeholder="Alex" error={errors.name} autoComplete="given-name" />
             )}
             <Input label={t('emailLbl')} value={email} onChange={setEmail}
-              type="email" placeholder="you@email.com" error={errors.email} autoComplete="email" />
-            <Input label={t('passLbl')} value={pass} onChange={setPass}
-              type="password" placeholder="••••••••" error={errors.pass}
-              autoComplete={tab === 'login' ? 'current-password' : 'new-password'} />
+              type="email" placeholder="you@email.com" error={errors.email}
+              autoComplete="email" />
+            <div>
+              <Input label={t('passLbl')} value={pass} onChange={setPass}
+                type="password" placeholder="••••••••" error={errors.pass}
+                autoComplete={tab === 'login' ? 'current-password' : 'new-password'} />
+              {tab === 'register' && !errors.pass && (
+                <p style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 6, lineHeight: 1.5 }}>
+                  {lang === 'fr'
+                    ? 'Minimum 8 caractères avec au moins un caractère spécial.'
+                    : 'Minimum 8 characters with at least one special character.'}
+                </p>
+              )}
+            </div>
           </div>
 
-          {error && (
+          {/* Erreur serveur */}
+          {getServerError() && (
             <div style={{
-              padding: '10px 14px', background: 'rgba(255,69,58,0.08)',
+              padding: '10px 14px',
+              background: 'rgba(255,69,58,0.08)',
               borderRadius: 10, fontSize: 13, color: 'var(--err)',
               animation: 'fadeUp 0.2s',
             }}>
-              {error.includes('already') || error.includes('existe') ? t('emailUsed') : t('authErr')}
+              {getServerError()}
             </div>
           )}
 
-          <Button label={tab === 'login' ? t('signIn') : t('register')}
-            full loading={loading} onClick={submit} size="lg" />
+          <Button
+            label={tab === 'login' ? t('signIn') : t('register')}
+            full loading={loading} onClick={submit} size="lg"
+          />
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--txt-sub)' }}>
             {tab === 'login' ? t('noAcc') : t('hasAcc')}{' '}
