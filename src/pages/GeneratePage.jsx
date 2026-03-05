@@ -286,4 +286,3 @@ export default function GeneratePage({ onDone, onBack }) {
     </div>
   )
 }
-src/pages/GeneratePage.jsx
