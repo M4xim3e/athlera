@@ -10,10 +10,10 @@ const ProfileContext = createContext(null)
 
 export function ProfileProvider({ children }) {
   const { user, authed } = useAuth()
-  const [profile,  setProfile]  = useState(null)
-  const [weights,  setWeights]  = useState([])
-  const [streak,   setStreak]   = useState({ current: 0, longest: 0 })
-  const [loading,  setLoading]  = useState(true)
+  const [profile,    setProfile]    = useState(null)
+  const [weights,    setWeights]    = useState([])
+  const [streak,     setStreak]     = useState({ current: 0, longest: 0 })
+  const [loading,    setLoading]    = useState(true)
   const [hasProfile, setHasProfile] = useState(false)
 
   useEffect(() => {
@@ -36,7 +36,6 @@ export function ProfileProvider({ children }) {
       getStreak(user.id),
     ])
     setProfile(p)
-    // Un profil est considéré complet si l'objectif a été défini
     setHasProfile(!!(p?.goal))
     setWeights(w)
     setStreak(s)
@@ -77,4 +76,3 @@ export function ProfileProvider({ children }) {
 }
 
 export const useProfile = () => useContext(ProfileContext)
-```
