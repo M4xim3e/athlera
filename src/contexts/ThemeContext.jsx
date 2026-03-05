@@ -1,22 +1,27 @@
-// src/contexts/ThemeContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext(null)
 
+const THEMES = ['black-era', 'white-era', 'pink-era']
+
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(
-    () => localStorage.getItem('athlera_theme') || 'dark'
+    () => localStorage.getItem('athlera_theme') || 'black-era'
   )
 
   useEffect(() => {
-    localStorage.setItem('athlera_theme', mode)
     document.documentElement.setAttribute('data-theme', mode)
+    localStorage.setItem('athlera_theme', mode)
   }, [mode])
 
-  const toggle = () => setMode(m => m === 'dark' ? 'light' : 'dark')
+  const setTheme = (t) => { if (THEMES.includes(t)) setMode(t) }
+  const toggle   = () => setMode(m => {
+    const idx = THEMES.indexOf(m)
+    return THEMES[(idx + 1) % THEMES.length]
+  })
 
   return (
-    <ThemeContext.Provider value={{ mode, toggle, isDark: mode === 'dark' }}>
+    <ThemeContext.Provider value={{ mode, setTheme, toggle, THEMES }}>
       {children}
     </ThemeContext.Provider>
   )
