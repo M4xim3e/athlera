@@ -28,7 +28,8 @@ function Router() {
   useEffect(() => {
     if (!splashDone) return
     if (!langPicked) { setScreen('langpicker'); return }
-    if (authLoading || profLoading) return
+    // Encore en train de charger → rester sur splash
+    if (authLoading || profLoading) { setScreen('splash'); return }
     if (!authed) { setScreen('auth'); return }
     if (!hasProfile) { setScreen('onboarding'); return }
     setScreen('dashboard')
@@ -63,4 +64,3 @@ export default function App() {
     </ThemeProvider>
   )
 }
-src/App.jsx
