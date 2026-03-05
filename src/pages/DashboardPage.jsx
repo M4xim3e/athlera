@@ -4,12 +4,12 @@ import { useProfile } from '../contexts/ProfileContext'
 import { useWorkout } from '../contexts/WorkoutContext'
 import { useLang }    from '../contexts/LangContext'
 import { useTheme }   from '../contexts/ThemeContext'
-import TopBar         from '../components/layout/TopBar'
-import BurgerMenu     from '../components/layout/BurgerMenu'
-import Card           from '../components/ui/Card'
-import Tag            from '../components/ui/Tag'
-import Button         from '../components/ui/Button'
-import Icons          from '../components/ui/Icons'
+import TopBar     from '../components/layout/TopBar'
+import BurgerMenu from '../components/layout/BurgerMenu'
+import Card       from '../components/ui/Card'
+import Tag        from '../components/ui/Tag'
+import Button     from '../components/ui/Button'
+import Icons      from '../components/ui/Icons'
 import { greet, fmtDate, weekDelta } from '../utils/helpers'
 
 const GOAL_COLOR = {
@@ -20,13 +20,16 @@ const GOAL_LABEL = {
   MUSCLE_GAIN: 'gMuscle', FAT_LOSS: 'gFat',
   STRENGTH: 'gStrength', MAINTENANCE: 'gMaintain', PERFORMANCE: 'gPerf',
 }
-const FOCUS_COLOR = { PUSH: 'acc', PULL: 'blue', LEGS: 'green', FULL: 'gray', UPPER: 'blue', LOWER: 'green' }
+const FOCUS_COLOR = {
+  PUSH: 'acc', PULL: 'blue', LEGS: 'green',
+  FULL: 'gray', UPPER: 'blue', LOWER: 'green', CUSTOM: 'gray',
+}
 
 function Sparkline({ weights }) {
   if (!weights?.length || weights.length < 2) return null
-  const vals = weights.slice(0, 10).map(w => parseFloat(w.value)).reverse()
-  const min  = Math.min(...vals)
-  const max  = Math.max(...vals)
+  const vals  = weights.slice(0, 10).map(w => parseFloat(w.value)).reverse()
+  const min   = Math.min(...vals)
+  const max   = Math.max(...vals)
   const range = max - min || 1
   const W = 100, H = 30, pad = 3
   const pts = vals.map((v, i) => {
@@ -49,14 +52,14 @@ function Sparkline({ weights }) {
 }
 
 export default function DashboardPage({ onNavigate }) {
-  const { user }                     = useAuth()
+  const { user }                              = useAuth()
   const { profile, weights, streak, addWeight } = useProfile()
-  const { history }                  = useWorkout()
-  const { t, lang }                  = useLang()
-  const { mode }                     = useTheme()
-  const [menuOpen,     setMenuOpen]     = useState(false)
-  const [editWeight,   setEditWeight]   = useState(false)
-  const [newWeight,    setNewWeight]    = useState('')
+  const { history }                           = useWorkout()
+  const { t, lang }                           = useLang()
+  const { mode }                              = useTheme()
+  const [menuOpen,   setMenuOpen]   = useState(false)
+  const [editWeight, setEditWeight] = useState(false)
+  const [newWeight,  setNewWeight]  = useState('')
 
   const name      = profile?.name || user?.user_metadata?.name || ''
   const goalKey   = GOAL_LABEL[profile?.goal] || 'gMuscle'
@@ -91,7 +94,7 @@ export default function DashboardPage({ onNavigate }) {
               </h1>
               <p style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 3 }}>
                 {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
-                  weekday: 'long', day: 'numeric', month: 'long'
+                  weekday: 'long', day: 'numeric', month: 'long',
                 })}
               </p>
             </div>
@@ -136,7 +139,7 @@ export default function DashboardPage({ onNavigate }) {
               fontFamily: "'Bebas Neue', sans-serif",
               fontSize: 28, color: 'var(--txt)', lineHeight: 1,
             }}>
-              {curWeight ? `${curWeight}` : '--'}
+              {curWeight || '--'}
             </div>
             <div style={{ fontSize: 9, color: 'var(--txt-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>
               kg
@@ -164,7 +167,7 @@ export default function DashboardPage({ onNavigate }) {
         </div>
 
         {/* CTA Générer */}
-        <div className="fade-up fade-up-2" style={{ marginBottom: 16 }}>
+        <div className="fade-up fade-up-2" style={{ marginBottom: 12 }}>
           <div style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 22, padding: '22px 20px',
@@ -197,6 +200,40 @@ export default function DashboardPage({ onNavigate }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* CTA Créer séance custom */}
+        <div className="fade-up fade-up-2" style={{ marginBottom: 16 }}>
+          <button onClick={() => onNavigate('custom')} style={{
+            width: '100%', background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 18, padding: '16px 20px',
+            cursor: 'pointer', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--acc)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 40, height: 40, background: 'var(--acc-dim)',
+                borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Icons.edit size={18} color="var(--acc-txt)" />
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>
+                  {lang === 'fr' ? 'Créer ma séance' : 'Create my workout'}
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
+                  {lang === 'fr' ? 'Exos, séries, poids, repos' : 'Exercises, sets, weight, rest'}
+                </p>
+              </div>
+            </div>
+            <Icons.chevRight size={16} color="var(--txt-muted)" />
+          </button>
         </div>
 
         {/* Carte poids */}
@@ -256,8 +293,8 @@ export default function DashboardPage({ onNavigate }) {
                     color: 'var(--txt)', fontFamily: 'inherit', outline: 'none',
                   }}
                 />
-                <Button label={t('save')}   onClick={handleSaveWeight}          size="sm" />
-                <Button label={t('cancel')} onClick={() => setEditWeight(false)} variant="ghost" size="sm" />
+                <Button label={t('save')}   onClick={handleSaveWeight}           size="sm" />
+                <Button label={t('cancel')} onClick={() => setEditWeight(false)}  variant="ghost" size="sm" />
               </div>
             )}
           </Card>
@@ -284,6 +321,11 @@ export default function DashboardPage({ onNavigate }) {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
                       <Tag label={lastWo.focus} color={FOCUS_COLOR[lastWo.focus] || 'gray'} small />
+                      {lastWo.custom_name && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)' }}>
+                          {lastWo.custom_name}
+                        </span>
+                      )}
                       <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>
                         {lastWo.exercise_count} {t('exos')} · {lastWo.total_sets} {t('series')}
                       </span>
@@ -317,6 +359,11 @@ export default function DashboardPage({ onNavigate }) {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Tag label={wo.focus} color={FOCUS_COLOR[wo.focus] || 'gray'} small />
+                    {wo.custom_name && (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>
+                        {wo.custom_name}
+                      </span>
+                    )}
                     <span style={{ fontSize: 13, color: 'var(--txt-sub)' }}>
                       {wo.exercise_count} {t('exos')} · {wo.total_sets} {t('series')}
                     </span>
