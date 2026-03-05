@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -10,24 +9,28 @@ export function AuthProvider({ children }) {
   const [error,   setError]   = useState(null)
 
   useEffect(() => {
+    // Récupère la session existante au chargement
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
+
+    // Écoute les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
+
     return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email, password) => {
     setError(null)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError('auth_error')
-      return { ok: false }
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (error) { setError('auth_error'); return { ok: false } }
     return { ok: true, userId: data.user?.id }
   }
 
@@ -36,7 +39,9 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } }
+      options: {
+        data: { name },
+      }
     })
     if (error) {
       if (error.message?.toLowerCase().includes('already')) {
