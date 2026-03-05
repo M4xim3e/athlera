@@ -1,4 +1,3 @@
-// src/pages/DashboardPage.jsx
 import { useState } from 'react'
 import { useAuth }    from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
@@ -23,7 +22,6 @@ const GOAL_LABEL = {
 }
 const FOCUS_COLOR = { PUSH: 'acc', PULL: 'blue', LEGS: 'green', FULL: 'gray', UPPER: 'blue', LOWER: 'green' }
 
-// Mini sparkline poids
 function Sparkline({ weights }) {
   if (!weights?.length || weights.length < 2) return null
   const vals = weights.slice(0, 10).map(w => parseFloat(w.value)).reverse()
@@ -41,7 +39,6 @@ function Sparkline({ weights }) {
     <svg viewBox={`0 0 ${W} ${H}`} width={80} height={24} style={{ overflow: 'visible' }}>
       <polyline points={pts} fill="none" stroke="var(--acc)" strokeWidth="1.8"
         strokeLinecap="round" strokeLinejoin="round" />
-      {/* Dernier point */}
       <circle
         cx={pts.split(' ').pop().split(',')[0]}
         cy={pts.split(' ').pop().split(',')[1]}
@@ -52,15 +49,14 @@ function Sparkline({ weights }) {
 }
 
 export default function DashboardPage({ onNavigate }) {
-  const { user }               = useAuth()
-  const { profile, weights, streak } = useProfile()
-  const { history }            = useWorkout()
-  const { t, lang }            = useLang()
-  const { mode, toggle }       = useTheme()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [editWeight, setEditWeight] = useState(false)
-  const [newWeight, setNewWeight]   = useState('')
-  const { addWeight } = useProfile()
+  const { user }                     = useAuth()
+  const { profile, weights, streak, addWeight } = useProfile()
+  const { history }                  = useWorkout()
+  const { t, lang }                  = useLang()
+  const { mode }                     = useTheme()
+  const [menuOpen,     setMenuOpen]     = useState(false)
+  const [editWeight,   setEditWeight]   = useState(false)
+  const [newWeight,    setNewWeight]    = useState('')
 
   const name      = profile?.name || user?.user_metadata?.name || ''
   const goalKey   = GOAL_LABEL[profile?.goal] || 'gMuscle'
@@ -115,13 +111,11 @@ export default function DashboardPage({ onNavigate }) {
             borderRadius: 16, padding: '14px 10px', textAlign: 'center',
           }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 5 }}>
-              <Icons.flame size={18} color={streak?.current > 0 ? 'var(--warn)' : 'var(--txt-muted)'}
-                style={{ filter: streak?.current > 0 ? '0 0 8px var(--warn)' : 'none' }} />
+              <Icons.flame size={18} color={streak?.current > 0 ? 'var(--warn)' : 'var(--txt-muted)'} />
             </div>
             <div style={{
               fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 28, color: streak?.current > 0 ? 'var(--warn)' : 'var(--txt)',
-              lineHeight: 1,
+              fontSize: 28, color: streak?.current > 0 ? 'var(--warn)' : 'var(--txt)', lineHeight: 1,
             }}>
               {streak?.current || 0}
             </div>
@@ -164,7 +158,7 @@ export default function DashboardPage({ onNavigate }) {
               {history.length}
             </div>
             <div style={{ fontSize: 9, color: 'var(--txt-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>
-              Séances
+              {t('sessions')}
             </div>
           </div>
         </div>
@@ -172,12 +166,10 @@ export default function DashboardPage({ onNavigate }) {
         {/* CTA Générer */}
         <div className="fade-up fade-up-2" style={{ marginBottom: 16 }}>
           <div style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
+            background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 22, padding: '22px 20px',
             position: 'relative', overflow: 'hidden',
           }}>
-            {/* Glow */}
             <div style={{
               position: 'absolute', top: -40, right: -40,
               width: 180, height: 180,
@@ -188,7 +180,7 @@ export default function DashboardPage({ onNavigate }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
                 <Icons.bolt size={18} color="var(--acc)" />
                 <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--acc-txt)' }}>
-                  Prêt à s'entraîner ?
+                  {t('readyTrain')}
                 </span>
               </div>
               <h2 style={{
@@ -196,7 +188,7 @@ export default function DashboardPage({ onNavigate }) {
                 fontSize: 28, color: 'var(--txt)',
                 letterSpacing: '0.02em', lineHeight: 1.1, marginBottom: 16,
               }}>
-                {history.length === 0 ? 'Lance ta première séance' : 'Génère ta prochaine séance'}
+                {history.length === 0 ? t('firstSession') : t('nextSession')}
               </h2>
               <Button
                 label={t('gen')} full
@@ -246,16 +238,13 @@ export default function DashboardPage({ onNavigate }) {
                   fontSize: 11, color: 'var(--txt-sub)', fontFamily: 'inherit',
                 }}>
                   <Icons.edit size={11} color="var(--txt-muted)" />
-                  Mettre à jour
+                  {t('updateW')}
                 </button>
               </div>
             </div>
 
             {editWeight && (
-              <div style={{
-                display: 'flex', gap: 8,
-                animation: 'fadeUp 0.18s cubic-bezier(0.16,1,0.3,1)',
-              }}>
+              <div style={{ display: 'flex', gap: 8, animation: 'fadeUp 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                 <input
                   type="number" value={newWeight}
                   onChange={e => setNewWeight(e.target.value)}
@@ -267,7 +256,7 @@ export default function DashboardPage({ onNavigate }) {
                     color: 'var(--txt)', fontFamily: 'inherit', outline: 'none',
                   }}
                 />
-                <Button label={t('save')} onClick={handleSaveWeight} size="sm" />
+                <Button label={t('save')}   onClick={handleSaveWeight}          size="sm" />
                 <Button label={t('cancel')} onClick={() => setEditWeight(false)} variant="ghost" size="sm" />
               </div>
             )}
@@ -287,10 +276,8 @@ export default function DashboardPage({ onNavigate }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    width: 44, height: 44,
-                    background: 'var(--acc-dim)',
-                    borderRadius: 14, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center',
+                    width: 44, height: 44, background: 'var(--acc-dim)',
+                    borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Icons.dumbbell size={20} color="var(--acc-txt)" />
                   </div>
@@ -298,7 +285,7 @@ export default function DashboardPage({ onNavigate }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
                       <Tag label={lastWo.focus} color={FOCUS_COLOR[lastWo.focus] || 'gray'} small />
                       <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>
-                        {lastWo.exercise_count} exercices · {lastWo.total_sets} séries
+                        {lastWo.exercise_count} {t('exos')} · {lastWo.total_sets} {t('series')}
                       </span>
                     </div>
                     <p style={{ fontSize: 13, color: 'var(--txt-sub)' }}>
@@ -324,17 +311,14 @@ export default function DashboardPage({ onNavigate }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {history.slice(1, 5).map(wo => (
                 <div key={wo.id} style={{
-                  display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 14px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 14,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 14px', background: 'var(--surface)',
+                  border: '1px solid var(--border)', borderRadius: 14,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Tag label={wo.focus} color={FOCUS_COLOR[wo.focus] || 'gray'} small />
                     <span style={{ fontSize: 13, color: 'var(--txt-sub)' }}>
-                      {wo.exercise_count} ex · {wo.total_sets} séries
+                      {wo.exercise_count} {t('exos')} · {wo.total_sets} {t('series')}
                     </span>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>
@@ -346,12 +330,8 @@ export default function DashboardPage({ onNavigate }) {
           </div>
         )}
 
-        {/* État vide */}
         {history.length === 0 && (
-          <div style={{
-            textAlign: 'center', padding: '24px 0',
-            color: 'var(--txt-muted)', fontSize: 13,
-          }}>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--txt-muted)', fontSize: 13 }}>
             {t('emptyH')}
           </div>
         )}
