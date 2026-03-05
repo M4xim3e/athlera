@@ -1,4 +1,3 @@
-// src/pages/LangPickerPage.jsx
 import { useState } from 'react'
 import { useLang }  from '../contexts/LangContext'
 import Icons        from '../components/ui/Icons'
@@ -20,7 +19,6 @@ export default function LangPickerPage({ onDone }) {
       alignItems: 'center', justifyContent: 'center',
       padding: '32px 24px', gap: 48,
     }}>
-      {/* Logo */}
       <div style={{ textAlign: 'center' }}>
         <div style={{
           width: 68, height: 68,
@@ -40,7 +38,6 @@ export default function LangPickerPage({ onDone }) {
         </h1>
       </div>
 
-      {/* Choix */}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {[
           { id: 'fr', label: 'Français' },
@@ -75,4 +72,3 @@ export default function LangPickerPage({ onDone }) {
     </div>
   )
 }
-```
