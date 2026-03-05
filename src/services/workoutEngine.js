@@ -902,4 +902,44 @@ export const generateWorkout = async ({
   }
 }
 
-export { getSplit, durationToExCount }
+// ─── REMPLACEMENT D'EXERCICE ─────────────────────
+export const findReplacement = (ex, usedIds, profile, lang = 'fr') => {
+  const level     = profile?.level || 'INTERMEDIATE'
+  const hasGym    = profile?.has_gym ?? true
+  const equipment = profile?.equipment || []
+
+  let pool = EXERCISES.filter(e =>
+    e.block === ex.block &&
+    !usedIds.has(e.id) &&
+    e.id !== ex.id &&
+    e.level.includes(level)
+  )
+
+  if (!hasGym) {
+    pool = filterByEquipment(pool, equipment)
+  }
+
+  if (pool.length === 0) {
+    pool = EXERCISES.filter(e =>
+      e.muscle_group === ex.muscle_group &&
+      !usedIds.has(e.id) &&
+      e.id !== ex.id
+    )
+  }
+
+  if (pool.length === 0) return null
+
+  const picked = pool[Math.floor(Math.random() * pool.length)]
+
+  return {
+    ...picked,
+    display_name:   lang === 'fr' ? picked.name_fr  : picked.name_en,
+    display_muscle: picked.muscles,
+    display_equip:  picked.equipment,
+    display_fiber:  picked.muscles,
+    display_exec:   lang === 'fr' ? picked.exec_fr  : picked.exec_en,
+    display_tip:    lang === 'fr' ? picked.tip_fr   : picked.tip_en,
+    weight_log:     null,
+    last_weight:    null,
+  }
+}
