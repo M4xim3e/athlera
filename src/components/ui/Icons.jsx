@@ -44,6 +44,7 @@ const paths = {
   trending:  <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
   scale:     <><path d="M6 20h12M3 4l9 16L21 4"/></>,
   info:      <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+  palette:   <><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-1.66 0-3-1.34-3-3 0-.78.31-1.48.81-2H8a2 2 0 0 1-2-2c0-.78.45-1.45 1.1-1.79A10 10 0 0 1 12 2z"/></>,
 }
 
 const Icons = {}
