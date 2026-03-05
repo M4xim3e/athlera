@@ -10,7 +10,7 @@
   --border-strong:  #333333;
   --txt:            #EEEEEE;
   --txt-sub:        #767676;
-  --txt-muted:      #2D2D2D;
+  --txt-muted:      #555555;
   --txt-inv:        #050505;
   --acc:            #B8FF52;
   --acc-hov:        #A8EF42;
@@ -52,7 +52,7 @@
   --border-strong:  #BCBCB8;
   --txt:            #0A0A0A;
   --txt-sub:        #606060;
-  --txt-muted:      #ADADAD;
+   --txt-muted:     #999999;
   --txt-inv:        #FFFFFF;
   --acc:            #FF6B00;
   --acc-hov:        #E85F00;
@@ -89,7 +89,7 @@
   --border-strong:  #541F60;
   --txt:            #F5E6FF;
   --txt-sub:        #A070B8;
-  --txt-muted:      #4A2255;
+  --txt-muted:      #7A4A8A;
   --txt-inv:        #08040A;
   --acc:            #FF2D9B;
   --acc-hov:        #FF1A8C;
