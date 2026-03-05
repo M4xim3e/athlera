@@ -40,7 +40,7 @@ export default function LangPickerPage({ onDone }) {
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {[
-          { id: 'fr', label: 'Français' },
+          { id: 'fr', label: 'Francais' },
           { id: 'en', label: 'English'  },
         ].map(lng => (
           <button
