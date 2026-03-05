@@ -24,21 +24,30 @@ export function AuthProvider({ children }) {
   const signIn = async (email, password) => {
     setError(null)
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); return { ok: false } }
+    if (error) {
+      setError('auth_error')
+      return { ok: false }
+    }
     return { ok: true, userId: data.user?.id }
   }
 
   const signUp = async (email, password, name) => {
     setError(null)
-    // Vérifie si l'email existe déjà via tentative de connexion silencieuse
     const { data, error } = await supabase.auth.signUp({
-      email, password,
+      email,
+      password,
       options: { data: { name } }
     })
-    if (error) { setError(error.message); return { ok: false } }
-    // Supabase retourne un user même si l'email existe (identitiesCount = 0)
+    if (error) {
+      if (error.message?.toLowerCase().includes('already')) {
+        setError('email_used')
+      } else {
+        setError('signup_error')
+      }
+      return { ok: false }
+    }
     if (data?.user?.identities?.length === 0) {
-      setError('email_already_used')
+      setError('email_used')
       return { ok: false }
     }
     return { ok: true, userId: data.user?.id }
