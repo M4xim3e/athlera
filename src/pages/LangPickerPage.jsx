@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useLang }  from '../contexts/LangContext'
-import Icons        from '../components/ui/Icons'
+import { useLang } from '../contexts/LangContext'
+import Icons from '../components/ui/Icons'
 
 export default function LangPickerPage({ onDone }) {
   const { setLanguage } = useLang()
@@ -37,11 +37,10 @@ export default function LangPickerPage({ onDone }) {
           ATHLERA
         </h1>
       </div>
-
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {[
           { id: 'fr', label: 'Francais' },
-          { id: 'en', label: 'English'  },
+          { id: 'en', label: 'English' },
         ].map(lng => (
           <button
             key={lng.id}
