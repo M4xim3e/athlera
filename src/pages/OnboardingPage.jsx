@@ -1,4 +1,3 @@
-// src/pages/OnboardingPage.jsx
 import { useState } from 'react'
 import { useAuth }    from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
@@ -35,20 +34,21 @@ export default function OnboardingPage({ onDone }) {
 
   const [step,   setStep]   = useState(0)
   const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState(null)
   const [data,   setData]   = useState({
-    name:       user?.user_metadata?.name || '',
-    gender:     null,
-    dob:        '',
-    height:     '',
-    weight:     '',
+    name:          user?.user_metadata?.name || '',
+    gender:        null,
+    dob:           '',
+    height:        '',
+    weight:        '',
     target_weight: '',
-    goal:       null,
-    level:      null,
-    freq:       null,
-    injuries:   '',
-    has_gym:    null,
-    gym_id:     null,
-    equipment:  [],
+    goal:          null,
+    level:         null,
+    freq:          null,
+    injuries:      '',
+    has_gym:       null,
+    gym_id:        null,
+    equipment:     [],
   })
 
   const up = (k, v) => setData(d => ({ ...d, [k]: v }))
@@ -73,12 +73,32 @@ export default function OnboardingPage({ onDone }) {
     gym:      data.has_gym !== null,
   }[STEPS[step]]
 
-  const next   = () => setStep(s => s + 1)
-  const back   = () => setStep(s => s - 1)
+  const next = () => setStep(s => s + 1)
+  const back = () => setStep(s => s - 1)
 
   const finish = async () => {
     setSaving(true)
-    await saveProfile({ ...data, age, email: user?.email })
+    setError(null)
+
+    const profileData = {
+      ...data,
+      age:   age || null,
+      email: user?.email || null,
+    }
+
+    console.log('Saving profile:', profileData)
+    console.log('User ID:', user?.id)
+
+    const ok = await saveProfile(profileData)
+
+    console.log('Save result:', ok)
+
+    if (!ok) {
+      setError('Erreur lors de la sauvegarde. Réessayez.')
+      setSaving(false)
+      return
+    }
+
     setSaving(false)
     onDone()
   }
@@ -141,12 +161,7 @@ export default function OnboardingPage({ onDone }) {
               ))}
             </div>
 
-            <Input
-              label={t('dob')}
-              value={data.dob}
-              onChange={v => up('dob', v)}
-              type="date"
-            />
+            <Input label={t('dob')} value={data.dob} onChange={v => up('dob', v)} type="date" />
             {age !== null && age >= 0 && (
               <p style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 8 }}>
                 {age} {t('yrs')}
@@ -165,12 +180,12 @@ export default function OnboardingPage({ onDone }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
               <Input label={t('height')} value={data.height} onChange={v => up('height', v)}
-                type="number" placeholder="178" suffix={t('cm')} min="100" max="250" />
+                type="number" placeholder="178" suffix={t('cm')} />
               <Input label={t('weight')} value={data.weight} onChange={v => up('weight', v)}
-                type="number" placeholder="75" suffix={t('kg')} min="30" max="300" />
+                type="number" placeholder="75" suffix={t('kg')} />
             </div>
             <Input label={t('tgtW')} value={data.target_weight} onChange={v => up('target_weight', v)}
-              type="number" placeholder="72" suffix={t('kg')} min="30" max="300" />
+              type="number" placeholder="72" suffix={t('kg')} />
             <div style={{ marginTop: 16 }}>
               <Input label={t('injLbl')} value={data.injuries} onChange={v => up('injuries', v)}
                 type="textarea" placeholder={t('injPl')} />
@@ -255,7 +270,7 @@ export default function OnboardingPage({ onDone }) {
             <p style={{ color: 'var(--txt-sub)', fontSize: 14, marginBottom: 22, lineHeight: 1.6 }}>{t('obSub')}</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 22 }}>
-              <Chip selected={data.has_gym === true}  onClick={() => up('has_gym', true)}
+              <Chip selected={data.has_gym === true} onClick={() => up('has_gym', true)}
                 style={{ borderRadius: 14, padding: 18, fontSize: 15, fontWeight: 700, flexDirection: 'column', gap: 8 }}>
                 <Icons.pin size={22} color={data.has_gym === true ? 'var(--acc-txt)' : 'var(--txt-sub)'} />
                 {t('atGym')}
@@ -311,12 +326,7 @@ export default function OnboardingPage({ onDone }) {
                     </Chip>
                   ))}
                 </div>
-                {/* Info domicile */}
-                <div style={{
-                  marginTop: 14, padding: '12px 14px',
-                  background: 'var(--acc-dim)', borderRadius: 14,
-                  display: 'flex', gap: 10, alignItems: 'flex-start',
-                }}>
+                <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--acc-dim)', borderRadius: 14, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <Icons.info size={14} color="var(--acc-txt)" style={{ flexShrink: 0, marginTop: 1 }} />
                   <p style={{ fontSize: 12, color: 'var(--acc-txt)', lineHeight: 1.6 }}>
                     Même sans salle, on peut créer des séances efficaces adaptées à ton matériel.
@@ -325,6 +335,13 @@ export default function OnboardingPage({ onDone }) {
               </div>
             )}
           </>
+        )}
+
+        {/* Erreur sauvegarde */}
+        {error && (
+          <div style={{ marginTop: 16, padding: '12px 14px', background: 'rgba(255,69,58,0.08)', borderRadius: 12 }}>
+            <p style={{ fontSize: 13, color: 'var(--err)' }}>{error}</p>
+          </div>
         )}
       </div>
 
