@@ -52,11 +52,11 @@ function Sparkline({ weights }) {
 }
 
 export default function DashboardPage({ onNavigate }) {
-  const { user }                              = useAuth()
+  const { user }                                = useAuth()
   const { profile, weights, streak, addWeight } = useProfile()
-  const { history }                           = useWorkout()
-  const { t, lang }                           = useLang()
-  const { mode }                              = useTheme()
+  const { history }                             = useWorkout()
+  const { t, lang }                             = useLang()
+  const { mode }                                = useTheme()
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [editWeight, setEditWeight] = useState(false)
   const [newWeight,  setNewWeight]  = useState('')
@@ -75,7 +75,11 @@ export default function DashboardPage({ onNavigate }) {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', paddingBottom: 32 }}>
+    <div style={{
+      minHeight: '100dvh',
+      background: 'var(--bg-base)',
+      paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
+    }}>
       <TopBar onMenu={() => setMenuOpen(true)} />
       {menuOpen && <BurgerMenu onClose={() => setMenuOpen(false)} onNavigate={onNavigate} />}
 
@@ -239,7 +243,10 @@ export default function DashboardPage({ onNavigate }) {
         {/* Carte poids */}
         <div className="fade-up fade-up-3" style={{ marginBottom: 16 }}>
           <Card>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+              marginBottom: editWeight ? 12 : 0,
+            }}>
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--txt-sub)', marginBottom: 4 }}>
                   {t('curW')}
@@ -280,21 +287,51 @@ export default function DashboardPage({ onNavigate }) {
               </div>
             </div>
 
+            {/* Saisie poids — boutons compacts qui ne débordent pas */}
             {editWeight && (
-              <div style={{ display: 'flex', gap: 8, animation: 'fadeUp 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+              <div style={{
+                display: 'flex', gap: 8,
+                animation: 'fadeUp 0.18s cubic-bezier(0.16,1,0.3,1)',
+              }}>
                 <input
-                  type="number" value={newWeight}
+                  type="number"
+                  value={newWeight}
                   onChange={e => setNewWeight(e.target.value)}
                   placeholder="75.0"
                   style={{
-                    flex: 1, background: 'var(--surface-up)',
+                    flex: '1 1 0', minWidth: 0,
+                    background: 'var(--surface-up)',
                     border: '1.5px solid var(--acc)', borderRadius: 11,
-                    padding: '11px 14px', fontSize: 15,
+                    padding: '11px 12px', fontSize: 15,
                     color: 'var(--txt)', fontFamily: 'inherit', outline: 'none',
                   }}
                 />
-                <Button label={t('save')}   onClick={handleSaveWeight}           size="sm" />
-                <Button label={t('cancel')} onClick={() => setEditWeight(false)}  variant="ghost" size="sm" />
+                <button
+                  onClick={handleSaveWeight}
+                  style={{
+                    flexShrink: 0,
+                    background: 'var(--acc)', border: 'none', borderRadius: 11,
+                    padding: '0 16px', height: 46, cursor: 'pointer',
+                    color: 'var(--txt-inv)', fontWeight: 700, fontSize: 13,
+                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t('save')}
+                </button>
+                <button
+                  onClick={() => setEditWeight(false)}
+                  style={{
+                    flexShrink: 0,
+                    background: 'var(--surface-up)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 11, padding: '0 14px', height: 46,
+                    cursor: 'pointer', color: 'var(--txt-sub)',
+                    fontWeight: 600, fontSize: 13,
+                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t('cancel')}
+                </button>
               </div>
             )}
           </Card>
