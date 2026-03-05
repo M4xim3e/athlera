@@ -12,6 +12,7 @@ import ExerciseCard from '../components/workout/ExerciseCard'
 import Button  from '../components/ui/Button'
 import Tag     from '../components/ui/Tag'
 import Icons   from '../components/ui/Icons'
+import RestTimer from '../components/workout/RestTimer'
 
 const FOCUS_COLOR = { PUSH:'acc', PULL:'blue', LEGS:'green', FULL:'gray', UPPER:'blue', LOWER:'green' }
 
