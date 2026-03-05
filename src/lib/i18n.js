@@ -132,6 +132,13 @@ export const STR = {
     profSave:     'Enregistrer',
     profSaved:    'Enregistré ✓',
     version:      'Version',
+    sessions:     'Séances',
+    readyTrain:   "Prêt à s'entraîner ?",
+    firstSession: 'Lance ta première séance',
+    nextSession:  'Génère ta prochaine séance',
+    updateW:      'Mettre à jour',
+    exos:         'exercices',
+    series:       'séries',
   },
 
   en: {
@@ -258,6 +265,13 @@ export const STR = {
     profSave:     'Save',
     profSaved:    'Saved ✓',
     version:      'Version',
+    sessions:     'Sessions',
+    readyTrain:   'Ready to train?',
+    firstSession: 'Start your first session',
+    nextSession:  'Generate your next session',
+    updateW:      'Update',
+   exos:         'exercises',
+   series:       'sets',
   },
 }
 
