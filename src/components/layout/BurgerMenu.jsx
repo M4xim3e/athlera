@@ -1,106 +1,213 @@
-// src/components/layout/BurgerMenu.jsx
-import { useTheme } from '../../contexts/ThemeContext'
-import { useLang }  from '../../contexts/LangContext'
-import { useAuth }  from '../../contexts/AuthContext'
+import { useState } from 'react'
+import { useAuth }    from '../../contexts/AuthContext'
+import { useLang }    from '../../contexts/LangContext'
+import { useTheme }   from '../../contexts/ThemeContext'
+import { useProfile } from '../../contexts/ProfileContext'
 import Icons from '../ui/Icons'
-import Button from '../ui/Button'
+
+const THEMES = [
+  { id: 'black-era', label: 'Black Era', icon: '⚡', desc: 'Sombre & électrique' },
+  { id: 'white-era', label: 'White Era', icon: '☀️', desc: 'Clair & épuré'       },
+  { id: 'pink-era',  label: 'Pink Era',  icon: '✦',  desc: 'Rose & bold'         },
+]
 
 export default function BurgerMenu({ onClose, onNavigate }) {
-  const { mode, toggle } = useTheme()
-  const { lang, setLanguage, t } = useLang()
-  const { signOut, user } = useAuth()
+  const { user, signOut }        = useAuth()
+  const { t, lang, setLanguage } = useLang()
+  const { mode, setTheme }       = useTheme()
+  const { profile }              = useProfile()
 
-  const handle = async (id) => {
-    if (id === 'theme')   { toggle(); return }
-    if (id === 'lang')    { setLanguage(lang === 'fr' ? 'en' : 'fr'); return }
-    if (id === 'logout')  { await signOut(); onClose(); return }
-    if (id === 'profile') { onNavigate?.('profile'); onClose(); return }
-  }
+  const [view, setView] = useState('main') // 'main' | 'theme'
 
-  const items = [
-    { id: 'profile', icon: <Icons.user size={18} />,   label: t('menuProf') },
-    { id: 'theme',   icon: mode === 'dark' ? <Icons.sun size={18} /> : <Icons.moon size={18} />, label: t('menuTheme'), sub: mode === 'dark' ? t('menuDark') : t('menuLight') },
-    { id: 'lang',    icon: <Icons.globe size={18} />,  label: t('menuLang'), sub: lang === 'fr' ? 'Français' : 'English' },
-    { id: 'logout',  icon: <Icons.logout size={18} />, label: t('menuOut'), danger: true },
-  ]
+  const handleNav = (dest) => { onClose(); onNavigate?.(dest) }
+  const handleSignOut = async () => { onClose(); await signOut() }
 
   return (
     <>
-      {/* Overlay */}
       <div onClick={onClose} style={{
-        position: 'fixed', inset: 0, zIndex: 40,
-        background: 'var(--overlay)'
+        position: 'fixed', inset: 0,
+        background: 'var(--overlay)', zIndex: 40,
+        animation: 'fadeIn 0.18s',
       }} />
 
-      {/* Panel */}
       <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 50,
-        width: Math.min(300, window.innerWidth * 0.85),
+        position: 'fixed', top: 0, right: 0,
+        width: '78%', maxWidth: 320,
+        height: '100dvh',
         background: 'var(--surface)',
         borderLeft: '1px solid var(--border)',
+        zIndex: 50,
         display: 'flex', flexDirection: 'column',
-        animation: 'slideRight 0.22s cubic-bezier(0.16,1,0.3,1)'
+        animation: 'slideRight 0.28s cubic-bezier(0.16,1,0.3,1)',
+        boxShadow: 'var(--shd-md)',
       }}>
+
         {/* Header */}
         <div style={{
-          padding: '22px 20px 18px',
+          padding: '24px 20px 20px',
           borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <div>
-            <span style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 22, color: 'var(--acc-txt)', letterSpacing: '0.05em'
-            }}>
-              ATHLERA
-            </span>
-            <div style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 2 }}>
-              {user?.email}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {view === 'theme' && (
+              <button onClick={() => setView('main')} style={{
+                background: 'var(--surface-up)', border: '1px solid var(--border)',
+                borderRadius: 9, padding: 7, cursor: 'pointer', display: 'flex',
+              }}>
+                <Icons.chevLeft size={14} color="var(--txt-sub)" />
+              </button>
+            )}
+            <div>
+              <p style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 20, color: 'var(--acc-txt)',
+                letterSpacing: '0.05em', lineHeight: 1,
+              }}>
+                {view === 'theme' ? 'Thème' : (profile?.name || 'Athlète')}
+              </p>
+              {view === 'main' && (
+                <p style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 3 }}>
+                  {user?.email}
+                </p>
+              )}
             </div>
           </div>
           <button onClick={onClose} style={{
-            background: 'none', border: 'none',
-            cursor: 'pointer', display: 'flex', padding: 4
+            background: 'var(--surface-up)', border: '1px solid var(--border)',
+            borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex',
           }}>
-            <Icons.x size={20} color="var(--txt-sub)" />
+            <Icons.x size={16} color="var(--txt-sub)" />
           </button>
         </div>
 
-        {/* Items */}
-        <div style={{ flex: 1, padding: '8px 10px' }}>
-          {items.map(item => (
-            <button key={item.id} onClick={() => handle(item.id)} style={{
-              display: 'flex', alignItems: 'center', gap: 13,
-              width: '100%', padding: '14px 14px', borderRadius: 14,
-              border: 'none', background: 'none', cursor: 'pointer',
-              fontFamily: 'inherit', textAlign: 'left',
-              color: item.danger ? 'var(--err)' : 'var(--txt)',
-              transition: 'background 0.12s'
-            }}>
-              <span style={{ color: item.danger ? 'var(--err)' : 'var(--txt-sub)' }}>
-                {item.icon}
-              </span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>{item.label}</div>
-                {item.sub && (
-                  <div style={{ fontSize: 12, color: 'var(--txt-muted)', marginTop: 1 }}>
-                    {item.sub}
-                  </div>
-                )}
-              </div>
-              {!item.danger && <Icons.chevRight size={14} color="var(--txt-muted)" />}
-            </button>
-          ))}
-        </div>
+        {/* Vue principale */}
+        {view === 'main' && (
+          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
 
-        {/* Footer version */}
-        <div style={{
-          padding: '0 0 40px', textAlign: 'center',
-          fontSize: 11, color: 'var(--txt-muted)'
-        }}>
-          ATHLERA · {t('version')} 1.0.0
+            <MenuItem icon="user" label={t('menuProf')} onClick={() => handleNav('profile')} />
+
+            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+
+            {/* Thème — ouvre le sous-menu */}
+            <div onClick={() => setView('theme')} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '13px 14px', borderRadius: 14, cursor: 'pointer',
+              transition: 'background 0.14s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-up)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 18 }}>
+                  {THEMES.find(th => th.id === mode)?.icon || '⚡'}
+                </span>
+                <div>
+                  <div style={{ fontSize: 15, color: 'var(--txt)', fontWeight: 600 }}>
+                    {t('menuTheme')}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--txt-sub)', marginTop: 1 }}>
+                    {THEMES.find(th => th.id === mode)?.label}
+                  </div>
+                </div>
+              </div>
+              <Icons.chevRight size={14} color="var(--txt-muted)" />
+            </div>
+
+            {/* Langue */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '13px 14px', borderRadius: 14,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Icons.globe size={18} color="var(--txt-sub)" />
+                <span style={{ fontSize: 15, color: 'var(--txt)', fontWeight: 600 }}>
+                  {t('menuLang')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['fr', 'en'].map(l => (
+                  <button key={l} onClick={() => setLanguage(l)} style={{
+                    padding: '5px 12px', borderRadius: 999,
+                    fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    background: lang === l ? 'var(--acc)' : 'var(--surface-up)',
+                    color:      lang === l ? 'var(--txt-inv)' : 'var(--txt-sub)',
+                    border: `1px solid ${lang === l ? 'var(--acc)' : 'var(--border)'}`,
+                    transition: 'all 0.15s',
+                  }}>
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+
+            <MenuItem icon="logout" label={t('menuOut')} onClick={handleSignOut} danger />
+          </div>
+        )}
+
+        {/* Vue thème */}
+        {view === 'theme' && (
+          <div style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ fontSize: 11, color: 'var(--txt-muted)', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '0 6px', marginBottom: 4 }}>
+              Choisissez votre ambiance
+            </p>
+            {THEMES.map(th => (
+              <button key={th.id} onClick={() => setTheme(th.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '16px 16px',
+                background: mode === th.id ? 'var(--acc-dim)' : 'var(--surface-up)',
+                border: `2px solid ${mode === th.id ? 'var(--acc)' : 'var(--border)'}`,
+                borderRadius: 16, cursor: 'pointer', width: '100%',
+                transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
+                fontFamily: 'inherit',
+              }}>
+                <span style={{ fontSize: 28 }}>{th.icon}</span>
+                <div style={{ textAlign: 'left', flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)' }}>
+                    {th.label}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
+                    {th.desc}
+                  </div>
+                </div>
+                {mode === th.id && (
+                  <Icons.check size={18} color="var(--acc-txt)" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
+          <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center' }}>
+            ATHLERA · {THEMES.find(th => th.id === mode)?.label || mode} · v0.5
+          </p>
         </div>
       </div>
     </>
+  )
+}
+
+function MenuItem({ icon, label, onClick, danger }) {
+  const IC = Icons[icon]
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '13px 14px', borderRadius: 14,
+      background: 'transparent', border: 'none',
+      cursor: 'pointer', width: '100%', textAlign: 'left',
+      transition: 'background 0.14s', fontFamily: 'inherit',
+    }}
+    onMouseEnter={e => e.currentTarget.style.background = danger ? 'rgba(255,69,58,0.07)' : 'var(--surface-up)'}
+    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      {IC && <IC size={18} color={danger ? 'var(--err)' : 'var(--txt-sub)'} />}
+      <span style={{ fontSize: 15, fontWeight: 600, color: danger ? 'var(--err)' : 'var(--txt)' }}>
+        {label}
+      </span>
+    </button>
   )
 }
