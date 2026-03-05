@@ -1,4 +1,3 @@
-// src/components/workout/ExerciseCard.jsx
 import { useState } from 'react'
 import { useLang }  from '../../contexts/LangContext'
 import { useAuth }  from '../../contexts/AuthContext'
@@ -9,14 +8,22 @@ import Card  from '../ui/Card'
 
 const TYPE_COLOR = { COMPOUND:'acc', ACCESSORY:'blue', ISOLATION:'gray' }
 
+const BODYWEIGHT_IDS = [
+  'pushup', 'diamond_pushup', 'pike_pushup', 'bodyweight_row',
+  'chin_up_bw', 'bw_squat_jump', 'nordic_curl', 'glute_bridge_bw',
+  'band_pull_apart', 'pullup', 'plank',
+]
+
 export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
-  const { t }  = useLang()
+  const { t }    = useLang()
   const { user } = useAuth()
   const [open,      setOpen]      = useState(false)
   const [showLog,   setShowLog]   = useState(false)
   const [logWeight, setLogWeight] = useState('')
   const [saving,    setSaving]    = useState(false)
   const [saved,     setSaved]     = useState(false)
+
+  const isBW = ex.equipment === 'bodyweight' || BODYWEIGHT_IDS.includes(ex.id)
 
   const handleLogWeight = async () => {
     if (!logWeight || isNaN(logWeight)) return
@@ -36,26 +43,34 @@ export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
       <div style={{ padding: '15px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: 'var(--acc)', lineHeight: 1, minWidth: 22 }}>
+            <span style={{
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: 24, color: 'var(--acc)', lineHeight: 1, minWidth: 22,
+            }}>
               {ex.order}
             </span>
             <Tag label={ex.type} color={TYPE_COLOR[ex.type] || 'gray'} small />
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button onClick={() => setShowLog(!showLog)} title="Log poids" style={{
-              background: ex.weight_log ? 'var(--acc-dim)' : 'var(--surface-up)',
-              border: `1px solid ${ex.weight_log ? 'var(--acc)' : 'var(--border)'}`,
-              borderRadius: 9, padding: '6px 8px',
-              cursor: 'pointer', display: 'flex', gap: 4, alignItems: 'center',
-              transition: 'all 0.15s',
-            }}>
-              <Icons.scale size={12} color={ex.weight_log ? 'var(--acc-txt)' : 'var(--txt-sub)'} />
-              {ex.weight_log && (
-                <span style={{ fontSize: 11, color: 'var(--acc-txt)', fontWeight: 700 }}>
-                  {ex.weight_log}kg
-                </span>
-              )}
-            </button>
+
+            {/* Bouton log poids — masqué pour poids du corps */}
+            {!isBW && (
+              <button onClick={() => setShowLog(!showLog)} title="Log poids" style={{
+                background: ex.weight_log ? 'var(--acc-dim)' : 'var(--surface-up)',
+                border: `1px solid ${ex.weight_log ? 'var(--acc)' : 'var(--border)'}`,
+                borderRadius: 9, padding: '6px 8px',
+                cursor: 'pointer', display: 'flex', gap: 4, alignItems: 'center',
+                transition: 'all 0.15s',
+              }}>
+                <Icons.scale size={12} color={ex.weight_log ? 'var(--acc-txt)' : 'var(--txt-sub)'} />
+                {ex.weight_log && (
+                  <span style={{ fontSize: 11, color: 'var(--acc-txt)', fontWeight: 700 }}>
+                    {ex.weight_log}kg
+                  </span>
+                )}
+              </button>
+            )}
+
             <button onClick={() => onReplace(ex)} style={{
               background: 'var(--surface-up)', border: '1px solid var(--border)',
               borderRadius: 9, padding: '6px 8px', cursor: 'pointer', display: 'flex',
@@ -66,7 +81,10 @@ export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
               background: 'var(--surface-up)', border: '1px solid var(--border)',
               borderRadius: 9, padding: '6px 8px', cursor: 'pointer', display: 'flex',
             }}>
-              {open ? <Icons.chevUp size={13} color="var(--txt-sub)" /> : <Icons.chevDown size={13} color="var(--txt-sub)" />}
+              {open
+                ? <Icons.chevUp   size={13} color="var(--txt-sub)" />
+                : <Icons.chevDown size={13} color="var(--txt-sub)" />
+              }
             </button>
           </div>
         </div>
@@ -81,10 +99,10 @@ export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
         {/* Stats */}
         <div style={{ display: 'flex', gap: 7 }}>
           {[
-            { label: t('sets'), value: ex.sets },
-            { label: 'Reps',    value: ex.reps },
-            { label: t('restLbl'), value: `${ex.rest}s` },
-            { label: t('rpe'),  value: ex.rpe },
+            { label: t('sets'),      value: ex.sets      },
+            { label: 'Reps',         value: ex.reps      },
+            { label: t('restLbl'),   value: `${ex.rest}s` },
+            { label: t('rpe'),       value: ex.rpe       },
           ].map(({ label, value }, i) => (
             <div key={i} style={{
               flex: 1, background: 'var(--surface-up)',
@@ -97,15 +115,18 @@ export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
               }}>
                 {value}
               </div>
-              <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{
+                fontSize: 9, color: 'var(--txt-muted)', marginTop: 2,
+                fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
                 {label}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Log poids */}
-        {showLog && (
+        {/* Log poids input */}
+        {!isBW && showLog && (
           <div style={{ marginTop: 12, display: 'flex', gap: 8, animation: 'fadeUp 0.18s' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <input
@@ -122,7 +143,9 @@ export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
               <span style={{
                 position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                 fontSize: 12, color: 'var(--txt-sub)', fontWeight: 600,
-              }}>kg</span>
+              }}>
+                kg
+              </span>
             </div>
             <button onClick={handleLogWeight} disabled={saving} style={{
               background: 'var(--acc)', border: 'none', borderRadius: 11,
@@ -153,7 +176,10 @@ export default function ExerciseCard({ exercise: ex, onReplace, onUpdate }) {
 
       {/* Détail expandable */}
       {open && (
-        <div style={{ borderTop: '1px solid var(--border)', padding: '18px 16px', animation: 'fadeUp 0.2s cubic-bezier(0.16,1,0.3,1)' }}>
+        <div style={{
+          borderTop: '1px solid var(--border)', padding: '18px 16px',
+          animation: 'fadeUp 0.2s cubic-bezier(0.16,1,0.3,1)',
+        }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <p style={{ fontSize: 9, color: 'var(--txt-muted)', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 4 }}>
