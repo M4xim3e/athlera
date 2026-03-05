@@ -76,17 +76,3 @@ export default function LangPickerPage({ onDone }) {
   )
 }
 ```
-
----
-
-## 4. Supabase — longueur mot de passe
-
-Dans ton dashboard Supabase → **Authentication → Providers → Email** → vérifie que **"Minimum password length"** est bien sur **6** (Supabase gère ça côté serveur). Tu peux le laisser à 6, la validation à 8 + caractère spécial se fait côté client dans le code.
-
----
-
-**Résumé — 3 fichiers à remplacer :**
-```
-src/contexts/AuthContext.jsx   → erreurs auth propres
-src/pages/AuthPage.jsx         → validation 8 car + spécial, messages clairs
-src/pages/LangPickerPage.jsx   → sans drapeaux, design épuré
