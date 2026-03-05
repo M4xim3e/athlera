@@ -26,36 +26,46 @@ export function ProfileProvider({ children }) {
       return
     }
     load()
-  }, [authed, user])
+  }, [authed, user?.id])
 
   const load = async () => {
     setLoading(true)
-    const [p, w, s] = await Promise.all([
-      getProfile(user.id),
-      getWeightHistory(user.id),
-      getStreak(user.id),
-    ])
-    setProfile(p)
-    setHasProfile(!!(p?.goal))
-    setWeights(w)
-    setStreak(s)
+    try {
+      const [p, w, s] = await Promise.all([
+        getProfile(user.id),
+        getWeightHistory(user.id),
+        getStreak(user.id),
+      ])
+      setProfile(p)
+      setHasProfile(!!(p?.goal))
+      setWeights(w || [])
+      setStreak(s || { current: 0, longest: 0 })
+    } catch (e) {
+      console.error('Profile load error:', e)
+      setHasProfile(false)
+    }
     setLoading(false)
   }
 
   const saveProfile = async (data) => {
-    const ok = await saveProfileSvc(user.id, data)
-    if (ok) {
-      setProfile(data)
-      setHasProfile(!!(data?.goal))
+    try {
+      const ok = await saveProfileSvc(user.id, data)
+      if (ok) {
+        setProfile(data)
+        setHasProfile(!!(data?.goal))
+      }
+      return ok
+    } catch (e) {
+      console.error('Save profile error:', e)
+      return false
     }
-    return ok
   }
 
   const addWeight = async (value) => {
     const ok = await addWeightSvc(user.id, value)
     if (ok) {
       const updated = await getWeightHistory(user.id)
-      setWeights(updated)
+      setWeights(updated || [])
     }
     return ok
   }
