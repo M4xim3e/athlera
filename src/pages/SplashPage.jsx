@@ -3,21 +3,18 @@ import { useEffect, useState } from 'react'
 import Icons from '../components/ui/Icons'
 
 export default function SplashPage({ onDone }) {
-  const [visible, setVisible] = useState(false)
+  const [visible,  setVisible]  = useState(false)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 50)
-
     const progressInterval = setInterval(() => {
       setProgress(p => {
         if (p >= 100) { clearInterval(progressInterval); return 100 }
         return p + 5
       })
     }, 90)
-
     const timer = setTimeout(() => onDone(), 2200)
-
     return () => {
       clearInterval(progressInterval)
       clearTimeout(timer)
@@ -27,7 +24,7 @@ export default function SplashPage({ onDone }) {
   return (
     <div style={{
       minHeight: '100dvh',
-      background: 'var(--bg-base)',
+      background: 'var(--bg-base, #060606)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -35,6 +32,7 @@ export default function SplashPage({ onDone }) {
       position: 'relative',
       overflow: 'hidden',
     }}>
+
       {/* Glow ambiant */}
       <div style={{
         position: 'absolute',
@@ -58,12 +56,12 @@ export default function SplashPage({ onDone }) {
       }}>
         <div style={{
           width: 80, height: 80,
-          background: 'var(--acc)',
+          background: 'var(--acc, #B8FF52)',
           borderRadius: 24,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: 'var(--shd-acc)',
         }}>
-          <Icons.logo size={42} color="var(--txt-inv)" strokeWidth={2.2} />
+          <Icons.logo size={42} color="var(--txt-inv, #060606)" strokeWidth={2.2} />
         </div>
       </div>
 
@@ -77,14 +75,14 @@ export default function SplashPage({ onDone }) {
         <h1 style={{
           fontFamily: "'Bebas Neue', sans-serif",
           fontSize: 58,
-          color: 'var(--txt)',
+          color: 'var(--txt, #F0F0F0)',
           letterSpacing: '0.05em',
           lineHeight: 1,
           marginBottom: 10,
         }}>
           ATHLERA
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--txt-sub)' }}>
+        <p style={{ fontSize: 14, color: 'var(--txt-sub, #888)' }}>
           Train with precision.
         </p>
       </div>
@@ -101,13 +99,13 @@ export default function SplashPage({ onDone }) {
       }}>
         <div style={{
           height: 2,
-          background: 'var(--border)',
+          background: 'var(--border, #1A1A1A)',
           borderRadius: 100,
           overflow: 'hidden',
         }}>
           <div style={{
             height: '100%',
-            background: 'var(--acc)',
+            background: 'var(--acc, #B8FF52)',
             width: `${progress}%`,
             transition: 'width 0.09s linear',
             borderRadius: 100,
