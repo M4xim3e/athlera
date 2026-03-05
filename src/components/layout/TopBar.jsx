@@ -6,8 +6,8 @@ export default function TopBar({ onBack, onMenu, title }) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
       paddingBottom: '14px',
-      paddingLeft: '18px',
-      paddingRight: '18px',
+      paddingLeft: '22px',
+      paddingRight: '22px',
       position: 'sticky', top: 0, zIndex: 20,
       background: 'var(--nav)', backdropFilter: 'blur(10px)',
     }}>
