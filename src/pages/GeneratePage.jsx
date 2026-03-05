@@ -4,6 +4,8 @@ import { useProfile } from '../contexts/ProfileContext'
 import { useWorkout } from '../contexts/WorkoutContext'
 import { useLang }    from '../contexts/LangContext'
 import { generateWorkout } from '../services/workoutEngine'
+import { getExerciseWeights } from '../services/userService'
+import { useAuth } from '../contexts/AuthContext'
 import TopBar  from '../components/layout/TopBar'
 import Button  from '../components/ui/Button'
 import Chip    from '../components/ui/Chip'
@@ -23,6 +25,7 @@ export default function GeneratePage({ onDone, onBack }) {
   const { profile }             = useProfile()
   const { history, setCurrent } = useWorkout()
   const { t, lang }             = useLang()
+  const { user }                = useAuth()
 
   const [duration,      setDuration]      = useState(45)
   const [focusType,     setFocusType]     = useState('AUTO')
@@ -32,23 +35,70 @@ export default function GeneratePage({ onDone, onBack }) {
   const [loading, setLoading] = useState(false)
   const [msgIdx,  setMsgIdx]  = useState(0)
 
-  // Curseur 30 → 105 min (par paliers de 5)
   const MIN_DUR = 30, MAX_DUR = 105
 
   const generate = async () => {
-    setLoading(true); setMsgIdx(0)
+    setLoading(true)
+    setMsgIdx(0)
+
     const msgs = LOADING_MSGS[lang] || LOADING_MSGS.fr
-    const iv = setInterval(() => setMsgIdx(i => i >= msgs.length - 1 ? i : i + 1), 320)
+
+    // Animation des messages
+    let idx = 0
+    const iv = setInterval(() => {
+      idx = Math.min(idx + 1, msgs.length - 1)
+      setMsgIdx(idx)
+    }, 320)
+
+    // Charger les derniers poids par exercice
+    let lastWeights = {}
+    try {
+      if (user?.id) {
+        const weights = await getExerciseWeights(user.id)
+        weights.forEach(w => {
+          if (!lastWeights[w.exercise_id]) {
+            lastWeights[w.exercise_id] = w
+          }
+        })
+      }
+    } catch (e) {
+      console.warn('Could not load exercise weights', e)
+    }
+
+    // Attendre la fin de l'animation
     await new Promise(r => setTimeout(r, msgs.length * 320 + 200))
     clearInterval(iv)
-    const workout = generateWorkout({
-      focusType: focusType === 'AUTO' ? null : focusType,
-      duration, profile, history, lang,
-      wantWarmup, wantFinisher, wantStretches,
-    })
-    setCurrent(workout)
-    setLoading(false)
-    onDone()
+
+    try {
+      const focus = focusType === 'AUTO' ? null : focusType
+
+      const workout = await generateWorkout({
+        profile,
+        focus,
+        lang,
+        duration,
+        wantWarmup,
+        wantFinisher,
+        wantStretches,
+        lastWeights,
+      })
+
+      console.log('Generated workout:', workout)
+
+      if (!workout || !workout.main || workout.main.length === 0) {
+        console.error('Workout generation returned empty result')
+        setLoading(false)
+        return
+      }
+
+      setCurrent(workout)
+      setLoading(false)
+      onDone()
+
+    } catch (err) {
+      console.error('Generation error:', err)
+      setLoading(false)
+    }
   }
 
   if (loading) {
@@ -73,11 +123,18 @@ export default function GeneratePage({ onDone, onBack }) {
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: 'var(--txt)', letterSpacing: '0.03em', marginBottom: 12 }}>
-            Génération en cours
+          <h2 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 32, color: 'var(--txt)',
+            letterSpacing: '0.03em', marginBottom: 12,
+          }}>
+            {lang === 'fr' ? 'Génération en cours' : 'Generating workout'}
           </h2>
           <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p key={msgIdx} style={{ fontSize: 14, color: 'var(--txt-sub)', animation: 'fadeUp 0.3s cubic-bezier(0.16,1,0.3,1)' }}>
+            <p key={msgIdx} style={{
+              fontSize: 14, color: 'var(--txt-sub)',
+              animation: 'fadeUp 0.3s cubic-bezier(0.16,1,0.3,1)',
+            }}>
               {msgs[msgIdx]}
             </p>
           </div>
@@ -99,16 +156,13 @@ export default function GeneratePage({ onDone, onBack }) {
 
       <div style={{ padding: '24px 18px 0' }}>
 
-        {/* Durée — curseur */}
+        {/* Durée */}
         <div className="fade-up" style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--txt-sub)' }}>
               {t('durLbl')}
             </p>
-            <span style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 28, color: 'var(--acc)', lineHeight: 1,
-            }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--acc)', lineHeight: 1 }}>
               {duration} <span style={{ fontSize: 14, color: 'var(--txt-sub)' }}>{t('minLbl')}</span>
             </span>
           </div>
@@ -162,8 +216,7 @@ export default function GeneratePage({ onDone, onBack }) {
                   padding: '14px 16px',
                   background: opt.val ? 'var(--acc-dim)' : 'var(--surface)',
                   border: `1.5px solid ${opt.val ? 'var(--acc)' : 'var(--border)'}`,
-                  borderRadius: 16, cursor: 'pointer',
-                  transition: 'all 0.16s',
+                  borderRadius: 16, cursor: 'pointer', transition: 'all 0.16s',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <IC size={18} color={opt.val ? 'var(--acc-txt)' : 'var(--txt-sub)'} />
@@ -193,11 +246,11 @@ export default function GeneratePage({ onDone, onBack }) {
             border: '1px solid var(--border)', borderRadius: 16, marginBottom: 20,
           }}>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 10 }}>
-              Profil actif
+              {lang === 'fr' ? 'Profil actif' : 'Active profile'}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {[
-                profile.goal?.replace('_',' '),
+                profile.goal?.replace('_', ' '),
                 profile.level,
                 `${profile.freq}j/sem`,
                 profile.has_gym ? (profile.gym_id || 'Salle') : 'Domicile',
@@ -207,7 +260,9 @@ export default function GeneratePage({ onDone, onBack }) {
                   background: 'var(--surface-up)', border: '1px solid var(--border)',
                   borderRadius: 999, padding: '3px 10px',
                   fontSize: 11, color: 'var(--txt-sub)', fontWeight: 600,
-                }}>{tag}</span>
+                }}>
+                  {tag}
+                </span>
               ))}
             </div>
           </div>
@@ -223,11 +278,12 @@ export default function GeneratePage({ onDone, onBack }) {
         borderTop: '1px solid var(--border)',
       }}>
         <Button
-          label={`Générer — ${duration} min`} full size="lg"
-          onClick={generate}
+          label={`${lang === 'fr' ? 'Générer' : 'Generate'} — ${duration} min`}
+          full size="lg" onClick={generate}
           iconRight={<Icons.bolt size={16} color="var(--txt-inv)" />}
         />
       </div>
     </div>
   )
 }
+src/pages/GeneratePage.jsx
