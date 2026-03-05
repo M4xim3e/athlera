@@ -6,9 +6,9 @@ import { useProfile } from '../../contexts/ProfileContext'
 import Icons from '../ui/Icons'
 
 const THEMES = [
-  { id: 'black-era', label: 'Black Era', icon: '⚡', desc: 'Sombre & électrique' },
-  { id: 'white-era', label: 'White Era', icon: '☀️', desc: 'Clair & épuré'       },
-  { id: 'pink-era',  label: 'Pink Era',  icon: '✦',  desc: 'Rose & bold'         },
+  { id: 'black-era', label: 'Black Era', desc: 'Sombre & électrique' },
+  { id: 'white-era', label: 'White Era', desc: 'Clair & épuré'       },
+  { id: 'pink-era',  label: 'Pink Era',  desc: 'Rose & bold'         },
 ]
 
 export default function BurgerMenu({ onClose, onNavigate }) {
@@ -17,10 +17,12 @@ export default function BurgerMenu({ onClose, onNavigate }) {
   const { mode, setTheme }       = useTheme()
   const { profile }              = useProfile()
 
-  const [view, setView] = useState('main') // 'main' | 'theme'
+  const [view, setView] = useState('main')
 
   const handleNav = (dest) => { onClose(); onNavigate?.(dest) }
   const handleSignOut = async () => { onClose(); await signOut() }
+
+  const currentTheme = THEMES.find(th => th.id === mode) || THEMES[0]
 
   return (
     <>
@@ -88,7 +90,7 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 
             <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
 
-            {/* Thème — ouvre le sous-menu */}
+            {/* Thème */}
             <div onClick={() => setView('theme')} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '13px 14px', borderRadius: 14, cursor: 'pointer',
@@ -98,15 +100,13 @@ export default function BurgerMenu({ onClose, onNavigate }) {
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 18 }}>
-                  {THEMES.find(th => th.id === mode)?.icon || '⚡'}
-                </span>
+                <Icons.palette size={18} color="var(--txt-sub)" />
                 <div>
                   <div style={{ fontSize: 15, color: 'var(--txt)', fontWeight: 600 }}>
                     {t('menuTheme')}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--txt-sub)', marginTop: 1 }}>
-                    {THEMES.find(th => th.id === mode)?.label}
+                    {currentTheme.label}
                   </div>
                 </div>
               </div>
@@ -150,7 +150,11 @@ export default function BurgerMenu({ onClose, onNavigate }) {
         {/* Vue thème */}
         {view === 'theme' && (
           <div style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p style={{ fontSize: 11, color: 'var(--txt-muted)', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '0 6px', marginBottom: 4 }}>
+            <p style={{
+              fontSize: 11, color: 'var(--txt-sub)', fontWeight: 700,
+              letterSpacing: '0.07em', textTransform: 'uppercase',
+              padding: '0 6px', marginBottom: 4,
+            }}>
               Choisissez votre ambiance
             </p>
             {THEMES.map(th => (
@@ -163,9 +167,28 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                 transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
                 fontFamily: 'inherit',
               }}>
-                <span style={{ fontSize: 28 }}>{th.icon}</span>
+                {/* Pastille couleur */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                  background: th.id === 'black-era' ? '#060606'
+                             : th.id === 'white-era' ? '#F5F5F3'
+                             : '#08040A',
+                  border: `2px solid ${
+                    th.id === 'black-era' ? '#B8FF52'
+                    : th.id === 'white-era' ? '#FF6B00'
+                    : '#FF2D9B'
+                  }`,
+                  boxShadow: `0 0 10px ${
+                    th.id === 'black-era' ? 'rgba(184,255,82,0.3)'
+                    : th.id === 'white-era' ? 'rgba(255,107,0,0.3)'
+                    : 'rgba(255,45,155,0.3)'
+                  }`,
+                }} />
                 <div style={{ textAlign: 'left', flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)' }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 700,
+                    color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)',
+                  }}>
                     {th.label}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
@@ -183,7 +206,7 @@ export default function BurgerMenu({ onClose, onNavigate }) {
         {/* Footer */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center' }}>
-            ATHLERA · {THEMES.find(th => th.id === mode)?.label || mode} · v0.5
+            ATHLERA · {currentTheme.label} · v0.5
           </p>
         </div>
       </div>
