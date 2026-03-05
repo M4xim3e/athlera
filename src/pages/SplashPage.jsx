@@ -1,4 +1,3 @@
-// src/pages/SplashPage.jsx
 import { useEffect, useState } from 'react'
 import Icons from '../components/ui/Icons'
 
@@ -31,6 +30,10 @@ export default function SplashPage({ onDone }) {
       justifyContent: 'center',
       position: 'relative',
       overflow: 'hidden',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingLeft: 'env(safe-area-inset-left, 0px)',
+      paddingRight: 'env(safe-area-inset-right, 0px)',
     }}>
 
       {/* Glow ambiant */}
@@ -90,7 +93,7 @@ export default function SplashPage({ onDone }) {
       {/* Loader */}
       <div style={{
         position: 'absolute',
-        bottom: 60,
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 60px)',
         left: '50%',
         transform: 'translateX(-50%)',
         width: 140,
