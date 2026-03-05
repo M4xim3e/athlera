@@ -1,58 +1,70 @@
-// src/contexts/ProfileContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
 import {
-  getProfile, saveProfile as save,
-  getWeightHistory, addWeight as add,
+  getProfile, saveProfile as saveProfileSvc,
+  getWeightHistory, addWeight as addWeightSvc,
   getStreak, updateStreak,
 } from '../services/userService'
 
 const ProfileContext = createContext(null)
 
 export function ProfileProvider({ children }) {
-  const { user } = useAuth()
-  const uid = user?.id
-
+  const { user, authed } = useAuth()
   const [profile,  setProfile]  = useState(null)
   const [weights,  setWeights]  = useState([])
   const [streak,   setStreak]   = useState({ current: 0, longest: 0 })
   const [loading,  setLoading]  = useState(true)
+  const [hasProfile, setHasProfile] = useState(false)
 
   useEffect(() => {
-    if (!uid) { setLoading(false); return }
-    const load = async () => {
-      setLoading(true)
-      const [p, w, s] = await Promise.all([
-        getProfile(uid),
-        getWeightHistory(uid),
-        getStreak(uid),
-      ])
-      setProfile(p)
-      setWeights(w)
-      setStreak(s)
+    if (!authed || !user) {
+      setProfile(null)
+      setWeights([])
+      setStreak({ current: 0, longest: 0 })
+      setHasProfile(false)
       setLoading(false)
+      return
     }
     load()
-  }, [uid])
+  }, [authed, user])
+
+  const load = async () => {
+    setLoading(true)
+    const [p, w, s] = await Promise.all([
+      getProfile(user.id),
+      getWeightHistory(user.id),
+      getStreak(user.id),
+    ])
+    setProfile(p)
+    // Un profil est considéré complet si l'objectif a été défini
+    setHasProfile(!!(p?.goal))
+    setWeights(w)
+    setStreak(s)
+    setLoading(false)
+  }
 
   const saveProfile = async (data) => {
-    await save(uid, data)
-    setProfile(prev => ({ ...prev, ...data }))
+    const ok = await saveProfileSvc(user.id, data)
+    if (ok) {
+      setProfile(data)
+      setHasProfile(!!(data?.goal))
+    }
+    return ok
   }
 
   const addWeight = async (value) => {
-    await add(uid, value)
-    const w = await getWeightHistory(uid)
-    setWeights(w)
-    setProfile(prev => ({ ...prev, weight: parseFloat(value) }))
+    const ok = await addWeightSvc(user.id, value)
+    if (ok) {
+      const updated = await getWeightHistory(user.id)
+      setWeights(updated)
+    }
+    return ok
   }
 
   const refreshStreak = async () => {
-    const s = await updateStreak(uid)
+    const s = await updateStreak(user.id)
     setStreak(s)
   }
-
-  const hasProfile = !!profile?.goal
 
   return (
     <ProfileContext.Provider value={{
@@ -65,3 +77,4 @@ export function ProfileProvider({ children }) {
 }
 
 export const useProfile = () => useContext(ProfileContext)
+```
