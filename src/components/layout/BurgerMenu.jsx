@@ -597,4 +597,3 @@ function MenuItem({ icon, label, onClick, danger, accent }) {
     </button>
   )
 }
-src/components/layout/BurgerMenu.jsx
