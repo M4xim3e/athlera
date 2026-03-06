@@ -113,4 +113,3 @@ export default function App() {
     </ThemeProvider>
   )
 }
-src/App.jsx
