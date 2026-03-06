@@ -1,5 +1,5 @@
 // src/components/ui/Icons.jsx
-// 28 icônes SVG custom — monoline, rounded
+// 30 icônes SVG custom — monoline, rounded
 // Usage : <Icons.dumbbell size={20} color="var(--acc)" />
 
 const Icon = ({ d, size = 20, color = 'currentColor', strokeWidth = 1.7, style = {} }) => (
@@ -21,6 +21,7 @@ const paths = {
   menu:      <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>,
   x:         <path d="M18 6L6 18M6 6l12 12"/>,
   user:      <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+  users:     <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
   logout:    <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
   dumbbell:  <><line x1="6.5" y1="5" x2="6.5" y2="19"/><line x1="17.5" y1="5" x2="17.5" y2="19"/><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="2" y="9" width="5" height="6" rx="1.5"/><rect x="17" y="9" width="5" height="6" rx="1.5"/></>,
   timer:     <><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M8.5 2.5h7M12 2.5v2"/></>,
@@ -45,6 +46,7 @@ const paths = {
   scale:     <><path d="M6 20h12M3 4l9 16L21 4"/></>,
   info:      <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
   palette:   <><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-1.66 0-3-1.34-3-3 0-.78.31-1.48.81-2H8a2 2 0 0 1-2-2c0-.78.45-1.45 1.1-1.79A10 10 0 0 1 12 2z"/></>,
+  chart:     <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
 }
 
 const Icons = {}
@@ -53,3 +55,4 @@ Object.keys(paths).forEach(name => {
 })
 
 export default Icons
+src/components/ui/Icons.jsx
