@@ -320,8 +320,10 @@ export const startProgram = async (userId, programId) => {
   try {
     await supabase.from('user_programs').update({ is_active: false }).eq('user_id', userId)
     const { error } = await supabase.from('user_programs').insert({
-      user_id: userId, program_id: programId,
-      started_at: new Date().toISOString(), is_active: true,
+      user_id:    userId,
+      program_id: programId,
+      started_at: new Date().toISOString(),
+      is_active:  true,
     })
     return !error
   } catch (e) { return false }
