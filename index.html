@@ -1,15 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#060606" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>ATHLERA</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+    <style>
+      @media screen and (orientation: landscape) and (max-height: 500px) {
+        body {
+          display: none !important;
+        }
+        #landscape-warning {
+          display: flex !important;
+        }
+      }
+      #landscape-warning {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #060606;
+        color: #F0F0F0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 24px;
+        letter-spacing: 0.05em;
+        z-index: 9999;
+      }
+    </style>
   </head>
   <body>
+    <div id="landscape-warning">
+      ↺ RETOURNE TON TÉLÉPHONE
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
