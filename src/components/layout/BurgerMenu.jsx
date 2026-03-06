@@ -38,12 +38,12 @@ export default function BurgerMenu({ onClose, onNavigate }) {
       })
     : null
 
-const handleCancel = async () => {
-  setCancelling(true)
-  const ok = await cancelEraPlus()   // ← plus de user.id
-  if (ok) await refresh()
-  setCancelling(false)
-  setShowCancelConfirm(false)
+  const handleCancel = async () => {
+    setCancelling(true)
+    const ok = await cancelEraPlus()
+    if (ok) await refresh()
+    setCancelling(false)
+    setShowCancelConfirm(false)
   }
 
   const handleReferral = async () => {
@@ -99,11 +99,7 @@ const handleCancel = async () => {
                   fontSize: 20, color: 'var(--acc-txt)',
                   letterSpacing: '0.05em', lineHeight: 1,
                 }}>
-                  {view === 'theme'
-                    ? 'Thème'
-                    : view === 'era'
-                      ? 'ERA+'
-                      : (profile?.name || 'Athlète')}
+                  {view === 'theme' ? 'Thème' : view === 'era' ? 'ERA+' : (profile?.name || 'Athlète')}
                 </p>
                 {view === 'main' && isPlus && (
                   <span style={{
@@ -132,9 +128,12 @@ const handleCancel = async () => {
 
         {/* ── VUE PRINCIPALE ── */}
         {view === 'main' && (
-          <div style={{ flex: 1, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+          <div style={{
+            flex: 1, padding: '10px 12px',
+            display: 'flex', flexDirection: 'column', gap: 2,
+            overflowY: 'auto',
+          }}>
 
-            {/* Section ERA+ si abonné */}
             {(isPlus || isCancelled) && (
               <>
                 <SectionLabel label="ERA+" />
@@ -168,7 +167,6 @@ const handleCancel = async () => {
               </>
             )}
 
-            {/* Navigation */}
             <SectionLabel label={lang === 'fr' ? 'Navigation' : 'Navigation'} />
             <MenuItem
               icon={<Icons.user size={17} color="var(--txt-sub)" />}
@@ -183,8 +181,7 @@ const handleCancel = async () => {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '12px 12px', borderRadius: 13,
               background: 'transparent', border: 'none', cursor: 'pointer',
-              width: '100%', fontFamily: 'inherit',
-              transition: 'background 0.13s',
+              width: '100%', fontFamily: 'inherit', transition: 'background 0.13s',
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-up)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -242,7 +239,6 @@ const handleCancel = async () => {
 
             <Divider />
 
-            {/* ERA+ CTA si pas abonné */}
             {!isPlus && !isCancelled && (
               <button onClick={() => handleNav('eraplus')} style={{
                 width: '100%', background: 'var(--acc)', border: 'none',
@@ -266,7 +262,10 @@ const handleCancel = async () => {
 
         {/* ── VUE THÈME ── */}
         {view === 'theme' && (
-          <div style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{
+            flex: 1, padding: '16px 12px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
             <p style={{
               fontSize: 11, color: 'var(--txt-sub)', fontWeight: 700,
               letterSpacing: '0.07em', textTransform: 'uppercase',
@@ -296,7 +295,10 @@ const handleCancel = async () => {
                   }`,
                 }} />
                 <div style={{ textAlign: 'left', flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)' }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 700,
+                    color: mode === th.id ? 'var(--acc-txt)' : 'var(--txt)',
+                  }}>
                     {th.label}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
@@ -311,9 +313,11 @@ const handleCancel = async () => {
 
         {/* ── VUE ERA+ ── */}
         {view === 'era' && (
-          <div style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
-
-            {/* Statut abonnement */}
+          <div style={{
+            flex: 1, padding: '16px 12px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+            overflowY: 'auto',
+          }}>
             <div style={{
               background: isPlus ? 'var(--acc-dim)' : 'rgba(255,159,10,0.08)',
               border: `1px solid ${isPlus ? 'var(--acc)' : 'rgba(255,159,10,0.3)'}`,
@@ -334,7 +338,7 @@ const handleCancel = async () => {
               {periodEnd && (
                 <p style={{ fontSize: 13, color: 'var(--txt-sub)' }}>
                   {isCancelled
-                    ? (lang === 'fr' ? `Accès jusqu'au` : 'Access until')
+                    ? (lang === 'fr' ? "Accès jusqu'au" : 'Access until')
                     : (lang === 'fr' ? 'Renouvellement le' : 'Renewal on')}
                   {' '}
                   <strong style={{ color: 'var(--txt)' }}>
@@ -344,7 +348,6 @@ const handleCancel = async () => {
               )}
             </div>
 
-            {/* Actions ERA+ */}
             {isPlus && (
               <>
                 <MenuItem
@@ -443,13 +446,12 @@ const handleCancel = async () => {
                   padding: '14px', cursor: 'pointer',
                   fontFamily: "'Bebas Neue', sans-serif",
                   fontSize: 17, letterSpacing: '0.04em', color: '#fff',
-                  opacity: cancelling ? 0.7 : 1,
-                  transition: 'opacity 0.15s',
+                  opacity: cancelling ? 0.7 : 1, transition: 'opacity 0.15s',
                 }}
               >
                 {cancelling
                   ? (lang === 'fr' ? 'Annulation...' : 'Cancelling...')
-                  : (lang === 'fr' ? 'Confirmer l\'annulation' : 'Confirm cancellation')}
+                  : (lang === 'fr' ? "Confirmer l'annulation" : 'Confirm cancellation')}
               </button>
               <button
                 onClick={() => setShowCancelConfirm(false)}
@@ -513,9 +515,7 @@ const handleCancel = async () => {
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(referralCode || '')
-                  } catch (e) {}
+                  try { await navigator.clipboard.writeText(referralCode || '') } catch (e) {}
                 }}
                 style={{
                   flex: 1, background: 'var(--acc)', border: 'none',
@@ -579,9 +579,7 @@ function MenuItem({ icon, label, onClick, danger, accent }) {
         width: 34, height: 34, flexShrink: 0,
         background: danger
           ? 'rgba(255,69,58,0.1)'
-          : accent
-            ? 'var(--acc-dim)'
-            : 'var(--surface-up)',
+          : accent ? 'var(--acc-dim)' : 'var(--surface-up)',
         borderRadius: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         border: accent ? '1px solid var(--acc)' : 'none',
