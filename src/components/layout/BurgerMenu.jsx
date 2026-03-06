@@ -38,12 +38,12 @@ export default function BurgerMenu({ onClose, onNavigate }) {
       })
     : null
 
-  const handleCancel = async () => {
-    setCancelling(true)
-    await cancelEraPlus(user.id)
-    await refresh()
-    setCancelling(false)
-    setShowCancelConfirm(false)
+const handleCancel = async () => {
+  setCancelling(true)
+  const ok = await cancelEraPlus()   // ← plus de user.id
+  if (ok) await refresh()
+  setCancelling(false)
+  setShowCancelConfirm(false)
   }
 
   const handleReferral = async () => {
