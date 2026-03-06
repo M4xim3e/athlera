@@ -45,6 +45,13 @@ function Router() {
     }
   }, [authLoading, profLoading, subLoading])
 
+  // Si déjà connecté et chargé → skip la splash directement
+  useEffect(() => {
+    if (loadingDone && authed && hasProfile && !splashDone) {
+      setSplashDone(true)
+    }
+  }, [loadingDone, authed, hasProfile, splashDone])
+
   // Routing principal
   useEffect(() => {
     if (!splashDone || !loadingDone) return
