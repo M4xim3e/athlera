@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSubscription } from '../contexts/SubscriptionContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
-import { supabase } from '../lib/supabase'
+import { activateEraPlus } from '../services/eraPlus'
 import TopBar from '../components/layout/TopBar'
 import Icons from '../components/ui/Icons'
 
@@ -11,63 +11,54 @@ const FEATURES = [
     icon: 'activity',
     fr: 'Surcharge progressive intelligente',
     en: 'Smart progressive overload',
-    desc_fr: 'Suggestions de progression adaptées à ton objectif après chaque séance.',
-    desc_en: 'Progression suggestions adapted to your goal after each session.',
+    desc_fr: 'Suggestions adaptées à ton objectif après chaque séance.',
+    desc_en: 'Suggestions adapted to your goal after each session.',
   },
   {
     icon: 'chart',
     fr: 'Historique & courbes de progression',
     en: 'History & progression curves',
-    desc_fr: 'Visualise ta progression sur chaque exercice dans le temps.',
+    desc_fr: 'Visualise ta progression sur chaque exercice.',
     desc_en: 'Visualize your progress on each exercise over time.',
   },
   {
     icon: 'calendar',
     fr: 'Programmes structurés 8-12 semaines',
     en: 'Structured 8-12 week programs',
-    desc_fr: 'PPL, Push/Pull, Force — avec progression intégrée semaine par semaine.',
-    desc_en: 'PPL, Push/Pull, Strength — with built-in weekly progression.',
+    desc_fr: 'PPL, Push/Pull, Force — progression intégrée.',
+    desc_en: 'PPL, Push/Pull, Strength — built-in weekly progression.',
   },
   {
     icon: 'bolt',
     fr: 'Statistiques avancées',
     en: 'Advanced statistics',
-    desc_fr: 'Volume total, PRs, comparaison semaine — tout en un coup d\'œil.',
-    desc_en: 'Total volume, PRs, week comparison — everything at a glance.',
+    desc_fr: 'Volume total, PRs, comparaison semaine.',
+    desc_en: 'Total volume, PRs, week comparison.',
   },
 ]
 
 export default function EraPlusPage({ onBack }) {
-  const { isPlus, refresh }  = useSubscription()
-  const { user }             = useAuth()
-  const { lang }             = useLang()
+  const { isPlus, isCancelled, periodEnd, refresh } = useSubscription()
+  const { user } = useAuth()
+  const { lang } = useLang()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  // Simulation abonnement (sans Stripe pour l'instant)
   const handleSubscribe = async () => {
     setLoading(true)
-    try {
-      await supabase
-        .from('subscriptions')
-        .upsert({
-          user_id:             user.id,
-          plan:                'era_plus',
-          status:              'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end:   new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' })
-
+    const ok = await activateEraPlus(user.id)
+    if (ok) {
       await refresh()
       setSuccess(true)
-    } catch (e) {
-      console.error(e)
     }
     setLoading(false)
   }
+
+  const fmtDate = (d) => d
+    ? d.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      })
+    : null
 
   return (
     <div style={{
@@ -94,26 +85,24 @@ export default function EraPlusPage({ onBack }) {
               ERA+
             </span>
           </div>
-
           <h1 style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 48, color: 'var(--txt)',
             letterSpacing: '0.03em', lineHeight: 1, marginBottom: 12,
           }}>
-            {lang === 'fr' ? 'Passe au niveau\nsuivant' : 'Level up your\ntraining'}
+            {lang === 'fr' ? 'Passe au niveau suivant' : 'Level up your training'}
           </h1>
-
           <p style={{ fontSize: 15, color: 'var(--txt-sub)', lineHeight: 1.6 }}>
             {lang === 'fr'
-              ? 'Tout ce qu\'il faut pour progresser plus vite et plus intelligemment.'
-              : 'Everything you need to progress faster and smarter.'}
+              ? 'Tout ce qu\'il faut pour progresser plus vite.'
+              : 'Everything you need to progress faster.'}
           </p>
         </div>
 
-        {/* Prix */}
+        {/* Prix + CTA */}
         <div style={{
           background: 'var(--surface)',
-          border: '2px solid var(--acc)',
+          border: `2px solid ${isPlus || isCancelled ? 'var(--border)' : 'var(--acc)'}`,
           borderRadius: 24, padding: '24px 20px',
           textAlign: 'center', marginBottom: 24,
           position: 'relative', overflow: 'hidden',
@@ -135,7 +124,34 @@ export default function EraPlusPage({ onBack }) {
               {lang === 'fr' ? '/ mois · Sans engagement' : '/ month · Cancel anytime'}
             </div>
 
-            {isPlus ? (
+            {isCancelled ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: 'rgba(255,159,10,0.1)', borderRadius: 14, padding: '12px',
+                }}>
+                  <Icons.flame size={16} color="var(--warn)" />
+                  <span style={{ fontSize: 13, color: 'var(--warn)', fontWeight: 700 }}>
+                    {lang === 'fr'
+                      ? `Actif jusqu'au ${fmtDate(periodEnd)}`
+                      : `Active until ${fmtDate(periodEnd)}`}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSubscribe}
+                  disabled={loading}
+                  style={{
+                    width: '100%', background: 'var(--acc)', border: 'none',
+                    borderRadius: 16, padding: '14px', cursor: 'pointer',
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: 18, letterSpacing: '0.05em', color: 'var(--txt-inv)',
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  {lang === 'fr' ? 'Renouveler ERA+' : 'Renew ERA+'}
+                </button>
+              </div>
+            ) : isPlus || success ? (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 background: 'rgba(48,209,88,0.12)', borderRadius: 14, padding: '14px',
@@ -143,16 +159,6 @@ export default function EraPlusPage({ onBack }) {
                 <Icons.check size={18} color="var(--ok)" />
                 <span style={{ fontSize: 15, color: 'var(--ok)', fontWeight: 700 }}>
                   {lang === 'fr' ? 'ERA+ actif ✦' : 'ERA+ active ✦'}
-                </span>
-              </div>
-            ) : success ? (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                background: 'rgba(48,209,88,0.12)', borderRadius: 14, padding: '14px',
-              }}>
-                <Icons.check size={18} color="var(--ok)" />
-                <span style={{ fontSize: 15, color: 'var(--ok)', fontWeight: 700 }}>
-                  {lang === 'fr' ? 'Bienvenue dans ERA+ !' : 'Welcome to ERA+!'}
                 </span>
               </div>
             ) : (
@@ -163,8 +169,7 @@ export default function EraPlusPage({ onBack }) {
                   width: '100%', background: 'var(--acc)', border: 'none',
                   borderRadius: 16, padding: '16px', cursor: loading ? 'wait' : 'pointer',
                   fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 20, letterSpacing: '0.05em',
-                  color: 'var(--txt-inv)',
+                  fontSize: 20, letterSpacing: '0.05em', color: 'var(--txt-inv)',
                   opacity: loading ? 0.7 : 1,
                   transition: 'opacity 0.15s',
                 }}
@@ -178,7 +183,7 @@ export default function EraPlusPage({ onBack }) {
         </div>
 
         {/* Features */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
           {FEATURES.map((f, i) => {
             const IC = Icons[f.icon] || Icons.bolt
             return (
@@ -207,36 +212,27 @@ export default function EraPlusPage({ onBack }) {
           })}
         </div>
 
-        {/* Comparaison free vs plus */}
+        {/* Tableau comparatif */}
         <div style={{
-          marginTop: 24,
           background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 18, overflow: 'hidden',
+          borderRadius: 18, overflow: 'hidden', marginBottom: 16,
         }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-            borderBottom: '1px solid var(--border)',
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid var(--border)' }}>
             <div style={{ padding: '12px 14px' }} />
             <div style={{
               padding: '12px 14px', textAlign: 'center',
               fontSize: 11, fontWeight: 700, color: 'var(--txt-sub)',
               textTransform: 'uppercase', letterSpacing: '0.06em',
               borderLeft: '1px solid var(--border)',
-            }}>
-              Free
-            </div>
+            }}>Free</div>
             <div style={{
               padding: '12px 14px', textAlign: 'center',
               fontSize: 11, fontWeight: 700, color: 'var(--acc-txt)',
               textTransform: 'uppercase', letterSpacing: '0.06em',
               borderLeft: '1px solid var(--border)',
               background: 'var(--acc-dim)',
-            }}>
-              ERA+
-            </div>
+            }}>ERA+</div>
           </div>
-
           {[
             { label: lang === 'fr' ? 'Génération séance' : 'Workout generation', free: true, plus: true },
             { label: lang === 'fr' ? 'Séances custom' : 'Custom workouts', free: true, plus: true },
@@ -244,30 +240,20 @@ export default function EraPlusPage({ onBack }) {
             { label: lang === 'fr' ? 'Historique exercices' : 'Exercise history', free: false, plus: true },
             { label: lang === 'fr' ? 'Programmes 8-12 sem.' : '8-12 week programs', free: false, plus: true },
             { label: lang === 'fr' ? 'Stats avancées' : 'Advanced stats', free: false, plus: true },
-          ].map((row, i) => (
+          ].map((row, i, arr) => (
             <div key={i} style={{
               display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-              borderBottom: i < 5 ? '1px solid var(--border)' : 'none',
+              borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
             }}>
-              <div style={{
-                padding: '12px 14px',
-                fontSize: 13, color: 'var(--txt)',
-              }}>
+              <div style={{ padding: '12px 14px', fontSize: 13, color: 'var(--txt)' }}>
                 {row.label}
               </div>
-              <div style={{
-                padding: '12px 14px', textAlign: 'center',
-                borderLeft: '1px solid var(--border)',
-              }}>
+              <div style={{ padding: '12px 14px', textAlign: 'center', borderLeft: '1px solid var(--border)' }}>
                 {row.free
                   ? <Icons.check size={14} color="var(--ok)" />
                   : <Icons.x size={14} color="var(--txt-muted)" />}
               </div>
-              <div style={{
-                padding: '12px 14px', textAlign: 'center',
-                borderLeft: '1px solid var(--border)',
-                background: 'var(--acc-dim)',
-              }}>
+              <div style={{ padding: '12px 14px', textAlign: 'center', borderLeft: '1px solid var(--border)', background: 'var(--acc-dim)' }}>
                 {row.plus
                   ? <Icons.check size={14} color="var(--acc-txt)" />
                   : <Icons.x size={14} color="var(--txt-muted)" />}
@@ -276,13 +262,10 @@ export default function EraPlusPage({ onBack }) {
           ))}
         </div>
 
-        <p style={{
-          textAlign: 'center', fontSize: 11, color: 'var(--txt-muted)',
-          marginTop: 16, lineHeight: 1.6,
-        }}>
+        <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.6 }}>
           {lang === 'fr'
-            ? 'Résiliable à tout moment. Aucun engagement.'
-            : 'Cancel anytime. No commitment.'}
+            ? 'Résiliable à tout moment. Accès maintenu jusqu\'à fin de période.'
+            : 'Cancel anytime. Access maintained until end of period.'}
         </p>
       </div>
     </div>
