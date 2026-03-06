@@ -1,226 +1,516 @@
-// src/pages/AuthPage.jsx
-import { useEffect, useState } from 'react'
-import { useAuth }   from '../contexts/AuthContext'
-import { useLang }   from '../contexts/LangContext'
-import { getProfile } from '../services/userService'
-import Icons  from '../components/ui/Icons'
-import Button from '../components/ui/Button'
-import Input  from '../components/ui/Input'
+import { useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
+import Icons from '../components/ui/Icons'
 
-const validatePassword = (pass) => {
-  if (pass.length < 8) return 'min8'
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass)) return 'needSpecial'
-  return null
-}
+const STEPS = ['compte', 'corps', 'objectif']
 
-const PASS_ERRORS = {
-  fr: {
-    min8:       'Minimum 8 caractères.',
-    needSpecial:'Au moins un caractère spécial requis (!@#$%...).',
-  },
-  en: {
-    min8:       'Minimum 8 characters.',
-    needSpecial:'At least one special character required (!@#$%...).',
-  },
-}
+const GOALS = [
+  { id: 'MUSCLE_GAIN', fr: 'Prise de muscle', en: 'Muscle gain', icon: 'dumbbell' },
+  { id: 'FAT_LOSS',    fr: 'Perte de gras',   en: 'Fat loss',    icon: 'flame'    },
+  { id: 'STRENGTH',    fr: 'Force',            en: 'Strength',    icon: 'bolt'     },
+  { id: 'MAINTENANCE', fr: 'Maintien',         en: 'Maintenance', icon: 'target'   },
+  { id: 'PERFORMANCE', fr: 'Performance',      en: 'Performance', icon: 'activity' },
+]
+
+const LEVELS = [
+  { id: 'beginner',     fr: 'Débutant',      en: 'Beginner'     },
+  { id: 'intermediate', fr: 'Intermédiaire', en: 'Intermediate'  },
+  { id: 'advanced',     fr: 'Avancé',        en: 'Advanced'     },
+]
+
+const SEXES = [
+  { id: 'homme',  fr: 'Homme',               en: 'Male'        },
+  { id: 'femme',  fr: 'Femme',               en: 'Female'      },
+  { id: 'neutre', fr: 'Ne se prononce pas',  en: 'Prefer not to say' },
+]
+
+const FREQ = [2, 3, 4, 5, 6]
 
 export default function AuthPage({ onDone }) {
-  const { signIn, signUp, error, clearError } = useAuth()
-  const { t, lang } = useLang()
-
-  const [tab,     setTab]     = useState('login')
-  const [name,    setName]    = useState('')
-  const [email,   setEmail]   = useState('')
-  const [pass,    setPass]    = useState('')
-  const [errors,  setErrors]  = useState({})
+  const { lang } = useLang()
+  const [mode,  setMode]  = useState('login') // 'login' | 'signup'
+  const [step,  setStep]  = useState(0)
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [visible, setVisible] = useState(false)
 
-  useEffect(() => { setTimeout(() => setVisible(true), 40) }, [])
+  // Étape 0 — Compte
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [name,     setName]     = useState('')
+  const [showPwd,  setShowPwd]  = useState(false)
 
-  const switchTab = (v) => {
-    setTab(v); clearError(); setErrors({})
-    setName(''); setEmail(''); setPass('')
+  // Étape 1 — Corps
+  const [dob,     setDob]     = useState('')
+  const [sexe,    setSexe]    = useState('')
+  const [taille,  setTaille]  = useState('')
+  const [poids,   setPoids]   = useState('')
+
+  // Étape 2 — Objectif
+  const [goal,    setGoal]    = useState('')
+  const [level,   setLevel]   = useState('')
+  const [freq,    setFreq]    = useState(3)
+
+  const t = (fr, en) => lang === 'fr' ? fr : en
+
+  const validateStep = () => {
+    if (mode === 'login') return true
+    if (step === 0) {
+      if (!name.trim())     return setError(t('Prénom requis', 'First name required')), false
+      if (!email.trim())    return setError(t('Email requis', 'Email required')), false
+      if (!/\S+@\S+\.\S+/.test(email)) return setError(t('Email invalide', 'Invalid email')), false
+      if (password.length < 6) return setError(t('Mot de passe trop court (6 min)', 'Password too short (6 min)')), false
+      return true
+    }
+    if (step === 1) {
+      if (!dob)    return setError(t('Date de naissance requise', 'Date of birth required')), false
+      if (!sexe)   return setError(t('Sexe requis', 'Sex required')), false
+      if (!taille) return setError(t('Taille requise', 'Height required')), false
+      if (!poids)  return setError(t('Poids requis', 'Weight required')), false
+      return true
+    }
+    if (step === 2) {
+      if (!goal)  return setError(t('Objectif requis', 'Goal required')), false
+      if (!level) return setError(t('Niveau requis', 'Level required')), false
+      return true
+    }
+    return true
   }
 
-  const validate = () => {
-    const e = {}
-    if (tab === 'register' && !name.trim()) {
-      e.name = lang === 'fr' ? 'Requis' : 'Required'
-    }
-    if (!email.includes('@')) {
-      e.email = lang === 'fr' ? 'Email invalide' : 'Invalid email'
-    }
-    if (tab === 'register') {
-      const passErr = validatePassword(pass)
-      if (passErr) e.pass = PASS_ERRORS[lang]?.[passErr] || PASS_ERRORS.fr[passErr]
-    } else {
-      if (pass.length < 1) e.pass = lang === 'fr' ? 'Requis' : 'Required'
-    }
-    setErrors(e)
-    return Object.keys(e).length === 0
+  const handleNext = () => {
+    setError('')
+    if (!validateStep()) return
+    setStep(s => s + 1)
   }
 
-  const submit = async () => {
-    if (!validate()) return
+  const handleLogin = async () => {
+    setError('')
+    if (!email.trim() || !password) return setError(t('Champs requis', 'Required fields'))
     setLoading(true)
-    if (tab === 'login') {
-      const res = await signIn(email, pass)
-      if (res.ok) {
-        const profile = await getProfile(res.userId)
-        onDone(!profile?.goal)
-      }
-    } else {
-      const res = await signUp(email, pass, name.trim())
-      if (res.ok) onDone(true)
-    }
+    const { error: e } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
+    if (e) return setError(e.message)
+    onDone(false)
   }
 
-  const getServerError = () => {
-    if (!error) return null
-    if (error === 'email_used') return lang === 'fr' ? 'Cette adresse email est déjà utilisée.' : 'This email is already in use.'
-    if (error === 'auth_error') return lang === 'fr' ? 'Email ou mot de passe incorrect.' : 'Invalid email or password.'
-    return lang === 'fr' ? 'Une erreur est survenue. Réessayez.' : 'An error occurred. Please try again.'
+  const handleSignup = async () => {
+    setError('')
+    if (!validateStep()) return
+    setLoading(true)
+    try {
+      const { data, error: signupErr } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      })
+      if (signupErr) throw signupErr
+
+      const userId = data.user?.id
+      if (!userId) throw new Error('No user ID')
+
+      const age = new Date().getFullYear() - new Date(dob).getFullYear()
+
+      const { error: profileErr } = await supabase.from('profiles').upsert({
+        id:            userId,
+        name,
+        email,
+        date_of_birth: dob,
+        sexe,
+        height_cm:     parseInt(taille),
+        goal,
+        level,
+        frequency:     freq,
+      }, { onConflict: 'id' })
+
+      if (profileErr) throw profileErr
+
+      const { error: weightErr } = await supabase.from('weights').insert({
+        user_id: userId,
+        value:   parseFloat(poids),
+      })
+
+      setLoading(false)
+      onDone(false)
+    } catch (e) {
+      setLoading(false)
+      setError(e.message)
+    }
+  }
+
+  const inputStyle = {
+    width: '100%',
+    background: 'var(--surface-up)',
+    border: '1.5px solid var(--border)',
+    borderRadius: 14,
+    padding: '14px 16px',
+    fontSize: 15,
+    color: 'var(--txt)',
+    fontFamily: 'inherit',
+    outline: 'none',
+    transition: 'border-color 0.15s',
+    boxSizing: 'border-box',
+  }
+
+  const labelStyle = {
+    fontSize: 11,
+    fontWeight: 700,
+    color: 'var(--txt-sub)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.07em',
+    marginBottom: 6,
+    display: 'block',
   }
 
   return (
     <div style={{
-      minHeight: '100dvh', background: 'var(--bg-base)',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '24px 20px 48px',
-      position: 'relative', overflow: 'hidden',
+      minHeight: '100dvh',
+      background: 'var(--bg-base)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 20px',
+      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
+      paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
+
+      {/* Glow ERA */}
       <div style={{
-        position: 'absolute', top: -80, left: '50%',
-        transform: 'translateX(-50%)',
-        width: 400, height: 400,
-        background: 'radial-gradient(ellipse, var(--acc-glo) 0%, transparent 68%)',
+        position: 'absolute', top: -80, right: -80,
+        width: 300, height: 300,
+        background: 'radial-gradient(ellipse, var(--acc-glo-m) 0%, transparent 68%)',
         borderRadius: '50%', pointerEvents: 'none',
       }} />
 
-      {/* Logo */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32,
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(-16px)',
-        transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)',
-      }}>
-        <div style={{ background: 'var(--acc)', borderRadius: 14, padding: 9, display: 'flex' }}>
-          <Icons.logo size={22} color="var(--txt-inv)" strokeWidth={2.2} />
-        </div>
-        <span style={{
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: 28, color: 'var(--acc-txt)', letterSpacing: '0.05em',
-        }}>
-          ATHLERA
-        </span>
-      </div>
+      <div style={{ width: '100%', maxWidth: 400, position: 'relative' }}>
 
-      {/* Card */}
-      <div style={{
-        width: '100%', maxWidth: 420,
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 24, overflow: 'hidden',
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'all 0.55s cubic-bezier(0.16,1,0.3,1) 0.1s',
-      }}>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', background: 'var(--bg-alt)', padding: 4, position: 'relative' }}>
-          {[['login', t('signIn')], ['register', t('register')]].map(([v, lbl]) => (
-            <button key={v} onClick={() => switchTab(v)} style={{
-              flex: 1, padding: '11px 0',
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
-              color: tab === v ? 'var(--txt)' : 'var(--txt-sub)',
-              borderRadius: 10, position: 'relative', zIndex: 1,
-              transition: 'color 0.15s',
-            }}>
-              {lbl}
-            </button>
-          ))}
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
-            position: 'absolute', top: 4, left: 4,
-            width: 'calc(50% - 4px)', height: 'calc(100% - 8px)',
-            background: 'var(--surface)', borderRadius: 10,
-            boxShadow: 'var(--shd-sm)',
-            transition: 'transform 0.28s cubic-bezier(0.34,1.56,0.64,1)',
-            transform: tab === 'login' ? 'translateX(0)' : 'translateX(100%)',
-          }} />
-        </div>
-
-        {/* Form */}
-        <div key={tab} style={{
-          padding: '28px 24px 26px',
-          display: 'flex', flexDirection: 'column', gap: 16,
-          animation: 'fadeUp 0.22s cubic-bezier(0.16,1,0.3,1)',
-        }}>
-          <div>
-            <h2 style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 30, color: 'var(--txt)', lineHeight: 1.05,
-            }}>
-              {tab === 'login' ? t('welcome') : t('welcomeNew')}
-            </h2>
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 56, height: 56,
+            background: 'var(--acc)', borderRadius: 18,
+            boxShadow: 'var(--shd-acc)', marginBottom: 12,
+          }}>
+            <Icons.logo size={28} color="var(--txt-inv)" strokeWidth={2.2} />
+          </div>
+          <h1 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 42, color: 'var(--acc-txt)',
+            letterSpacing: '0.05em', lineHeight: 1,
+          }}>
+            ATHLERA
+          </h1>
+          {mode === 'signup' && (
             <p style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 4 }}>
-              {t('authSub')}
+              {t('Étape', 'Step')} {step + 1}/3 — {
+                step === 0 ? t('Ton compte', 'Your account') :
+                step === 1 ? t('Ton corps', 'Your body') :
+                t('Ton objectif', 'Your goal')
+              }
             </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {tab === 'register' && (
-              <Input label={t('nameLbl')} value={name} onChange={setName}
-                placeholder="Alex" error={errors.name} autoComplete="given-name" />
-            )}
-            <Input label={t('emailLbl')} value={email} onChange={setEmail}
-              type="email" placeholder="you@email.com" error={errors.email}
-              autoComplete="email" />
-            <div>
-              <Input label={t('passLbl')} value={pass} onChange={setPass}
-                type="password" placeholder="••••••••" error={errors.pass}
-                autoComplete={tab === 'login' ? 'current-password' : 'new-password'} />
-              {tab === 'register' && !errors.pass && (
-                <p style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 6, lineHeight: 1.5 }}>
-                  {lang === 'fr'
-                    ? 'Minimum 8 caractères avec au moins un caractère spécial.'
-                    : 'Minimum 8 characters with at least one special character.'}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Erreur serveur */}
-          {getServerError() && (
-            <div style={{
-              padding: '10px 14px',
-              background: 'rgba(255,69,58,0.08)',
-              borderRadius: 10, fontSize: 13, color: 'var(--err)',
-              animation: 'fadeUp 0.2s',
-            }}>
-              {getServerError()}
-            </div>
           )}
-
-          <Button
-            label={tab === 'login' ? t('signIn') : t('register')}
-            full loading={loading} onClick={submit} size="lg"
-          />
-
-          <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--txt-sub)' }}>
-            {tab === 'login' ? t('noAcc') : t('hasAcc')}{' '}
-            <button onClick={() => switchTab(tab === 'login' ? 'register' : 'login')} style={{
-              background: 'none', border: 'none',
-              color: 'var(--acc-txt)', fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
-            }}>
-              {tab === 'login' ? t('toReg') : t('toLog')}
-            </button>
-          </p>
         </div>
+
+        {/* Progress bar signup */}
+        {mode === 'signup' && (
+          <div style={{
+            display: 'flex', gap: 6, marginBottom: 28,
+          }}>
+            {STEPS.map((_, i) => (
+              <div key={i} style={{
+                flex: 1, height: 3, borderRadius: 99,
+                background: i <= step ? 'var(--acc)' : 'var(--border)',
+                transition: 'background 0.3s',
+              }} />
+            ))}
+          </div>
+        )}
+
+        {/* ── LOGIN ── */}
+        {mode === 'login' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>{t('Email', 'Email')}</label>
+              <input
+                type="email" value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="ton@email.com"
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>{t('Mot de passe', 'Password')}</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPwd ? 'text' : 'password'} value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ ...inputStyle, paddingRight: 48 }}
+                  onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                />
+                <button onClick={() => setShowPwd(!showPwd)} style={{
+                  position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', display: 'flex',
+                }}>
+                  {showPwd
+                    ? <Icons.eyeOff size={18} color="var(--txt-muted)" />
+                    : <Icons.eye size={18} color="var(--txt-muted)" />}
+                </button>
+              </div>
+            </div>
+            {error && <p style={{ fontSize: 13, color: 'var(--err)', textAlign: 'center' }}>{error}</p>}
+            <button onClick={handleLogin} disabled={loading} style={{
+              background: 'var(--acc)', border: 'none', borderRadius: 14,
+              padding: '15px', cursor: loading ? 'wait' : 'pointer',
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: 20, letterSpacing: '0.05em', color: 'var(--txt-inv)',
+              opacity: loading ? 0.7 : 1, marginTop: 4,
+            }}>
+              {loading ? '...' : t('Connexion', 'Sign in')}
+            </button>
+            <button onClick={() => { setMode('signup'); setStep(0); setError('') }} style={{
+              background: 'none', border: '1px solid var(--border)', borderRadius: 14,
+              padding: '13px', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 14, fontWeight: 600, color: 'var(--txt-sub)',
+            }}>
+              {t("Créer un compte", "Create an account")}
+            </button>
+          </div>
+        )}
+
+        {/* ── SIGNUP ÉTAPE 0 — Compte ── */}
+        {mode === 'signup' && step === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>{t('Prénom', 'First name')} *</label>
+              <input
+                type="text" value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder={t('Ton prénom', 'Your first name')}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>{t('Email', 'Email')} *</label>
+              <input
+                type="email" value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="ton@email.com"
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>{t('Mot de passe', 'Password')} *</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPwd ? 'text' : 'password'} value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="6 caractères minimum"
+                  style={{ ...inputStyle, paddingRight: 48 }}
+                  onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                />
+                <button onClick={() => setShowPwd(!showPwd)} style={{
+                  position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', display: 'flex',
+                }}>
+                  {showPwd
+                    ? <Icons.eyeOff size={18} color="var(--txt-muted)" />
+                    : <Icons.eye size={18} color="var(--txt-muted)" />}
+                </button>
+              </div>
+            </div>
+            {error && <p style={{ fontSize: 13, color: 'var(--err)', textAlign: 'center' }}>{error}</p>}
+            <button onClick={handleNext} style={{
+              background: 'var(--acc)', border: 'none', borderRadius: 14,
+              padding: '15px', cursor: 'pointer',
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: 20, letterSpacing: '0.05em', color: 'var(--txt-inv)',
+              marginTop: 4,
+            }}>
+              {t('Continuer', 'Continue')} →
+            </button>
+            <button onClick={() => { setMode('login'); setError('') }} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 13, color: 'var(--txt-sub)',
+              textAlign: 'center', padding: '8px',
+            }}>
+              {t('Déjà un compte ? Connexion', 'Already have an account? Sign in')}
+            </button>
+          </div>
+        )}
+
+        {/* ── SIGNUP ÉTAPE 1 — Corps ── */}
+        {mode === 'signup' && step === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>{t('Date de naissance', 'Date of birth')} *</label>
+              <input
+                type="date" value={dob}
+                onChange={e => setDob(e.target.value)}
+                max={new Date(new Date().setFullYear(new Date().getFullYear() - 13)).toISOString().split('T')[0]}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>{t('Sexe', 'Sex')} *</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {SEXES.map(s => (
+                  <button key={s.id} onClick={() => setSexe(s.id)} style={{
+                    flex: 1, padding: '11px 6px', borderRadius: 12, cursor: 'pointer',
+                    fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
+                    background: sexe === s.id ? 'var(--acc-dim)' : 'var(--surface-up)',
+                    border: `1.5px solid ${sexe === s.id ? 'var(--acc)' : 'var(--border)'}`,
+                    color: sexe === s.id ? 'var(--acc-txt)' : 'var(--txt-sub)',
+                    transition: 'all 0.15s',
+                  }}>
+                    {lang === 'fr' ? s.fr : s.en}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>{t('Taille (cm)', 'Height (cm)')} *</label>
+                <input
+                  type="number" value={taille}
+                  onChange={e => setTaille(e.target.value)}
+                  placeholder="175"
+                  min="100" max="250"
+                  style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>{t('Poids (kg)', 'Weight (kg)')} *</label>
+                <input
+                  type="number" value={poids}
+                  onChange={e => setPoids(e.target.value)}
+                  placeholder="75"
+                  min="30" max="300"
+                  style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = 'var(--acc)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                />
+              </div>
+            </div>
+            {error && <p style={{ fontSize: 13, color: 'var(--err)', textAlign: 'center' }}>{error}</p>}
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button onClick={() => { setStep(0); setError('') }} style={{
+                flex: 1, background: 'var(--surface-up)', border: '1px solid var(--border)',
+                borderRadius: 14, padding: '14px', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--txt-sub)',
+              }}>
+                ←
+              </button>
+              <button onClick={handleNext} style={{
+                flex: 3, background: 'var(--acc)', border: 'none', borderRadius: 14,
+                padding: '14px', cursor: 'pointer',
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 20, letterSpacing: '0.05em', color: 'var(--txt-inv)',
+              }}>
+                {t('Continuer', 'Continue')} →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SIGNUP ÉTAPE 2 — Objectif ── */}
+        {mode === 'signup' && step === 2 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>{t('Objectif', 'Goal')} *</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {GOALS.map(g => {
+                  const IC = Icons[g.icon] || Icons.bolt
+                  return (
+                    <button key={g.id} onClick={() => setGoal(g.id)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '13px 16px', borderRadius: 14, cursor: 'pointer',
+                      fontFamily: 'inherit', textAlign: 'left',
+                      background: goal === g.id ? 'var(--acc-dim)' : 'var(--surface-up)',
+                      border: `1.5px solid ${goal === g.id ? 'var(--acc)' : 'var(--border)'}`,
+                      color: goal === g.id ? 'var(--acc-txt)' : 'var(--txt)',
+                      transition: 'all 0.15s',
+                    }}>
+                      <IC size={18} color={goal === g.id ? 'var(--acc-txt)' : 'var(--txt-sub)'} />
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>
+                        {lang === 'fr' ? g.fr : g.en}
+                      </span>
+                      {goal === g.id && <Icons.check size={16} color="var(--acc-txt)" style={{ marginLeft: 'auto' }} />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>{t('Niveau', 'Level')} *</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {LEVELS.map(l => (
+                  <button key={l.id} onClick={() => setLevel(l.id)} style={{
+                    flex: 1, padding: '11px 6px', borderRadius: 12, cursor: 'pointer',
+                    fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
+                    background: level === l.id ? 'var(--acc-dim)' : 'var(--surface-up)',
+                    border: `1.5px solid ${level === l.id ? 'var(--acc)' : 'var(--border)'}`,
+                    color: level === l.id ? 'var(--acc-txt)' : 'var(--txt-sub)',
+                    transition: 'all 0.15s',
+                  }}>
+                    {lang === 'fr' ? l.fr : l.en}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>{t('Séances / semaine', 'Sessions / week')}</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {FREQ.map(f => (
+                  <button key={f} onClick={() => setFreq(f)} style={{
+                    flex: 1, padding: '11px 4px', borderRadius: 12, cursor: 'pointer',
+                    fontFamily: "'Bebas Neue', sans-serif", fontSize: 18,
+                    background: freq === f ? 'var(--acc-dim)' : 'var(--surface-up)',
+                    border: `1.5px solid ${freq === f ? 'var(--acc)' : 'var(--border)'}`,
+                    color: freq === f ? 'var(--acc-txt)' : 'var(--txt-sub)',
+                    transition: 'all 0.15s',
+                  }}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {error && <p style={{ fontSize: 13, color: 'var(--err)', textAlign: 'center' }}>{error}</p>}
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button onClick={() => { setStep(1); setError('') }} style={{
+                flex: 1, background: 'var(--surface-up)', border: '1px solid var(--border)',
+                borderRadius: 14, padding: '14px', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--txt-sub)',
+              }}>
+                ←
+              </button>
+              <button onClick={handleSignup} disabled={loading} style={{
+                flex: 3, background: 'var(--acc)', border: 'none', borderRadius: 14,
+                padding: '14px', cursor: loading ? 'wait' : 'pointer',
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 20, letterSpacing: '0.05em', color: 'var(--txt-inv)',
+                opacity: loading ? 0.7 : 1,
+              }}>
+                {loading ? '...' : t("C'est parti ✦", "Let's go ✦")}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
