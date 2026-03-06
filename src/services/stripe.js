@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase'
 
-const SUPABASE_URL = 'https://qctqzmclzuabkgpbsijr.supabase.co'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
 async function getAuthHeader() {
   const { data } = await supabase.auth.getSession()
@@ -27,9 +27,9 @@ export const createCheckoutSession = async () => {
         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
-        price_id: priceId,
+        price_id:    priceId,
         success_url: `${window.location.origin}?era_plus=success`,
-        cancel_url: `${window.location.origin}?era_plus=cancel`,
+        cancel_url:  `${window.location.origin}?era_plus=cancel`,
       }),
     })
 
