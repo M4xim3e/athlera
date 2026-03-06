@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 async function getAuthHeader() {
   const { data } = await supabase.auth.getSession()
@@ -24,12 +25,12 @@ export const createCheckoutSession = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': authHeader,
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'apikey': ANON_KEY,
       },
       body: JSON.stringify({
-        price_id:    priceId,
+        price_id: priceId,
         success_url: `${window.location.origin}?era_plus=success`,
-        cancel_url:  `${window.location.origin}?era_plus=cancel`,
+        cancel_url: `${window.location.origin}?era_plus=cancel`,
       }),
     })
 
@@ -56,7 +57,7 @@ export const cancelSubscription = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': authHeader,
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'apikey': ANON_KEY,
       },
     })
 
