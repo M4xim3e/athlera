@@ -14,9 +14,64 @@ export const getSubscription = async (userId) => {
   }
 }
 
-export const isEraPlus = async (userId) => {
-  const sub = await getSubscription(userId)
-  return sub?.plan === 'era_plus' && sub?.status === 'active'
+export const activateEraPlus = async (userId) => {
+  try {
+    const periodStart = new Date()
+    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const { error } = await supabase
+      .from('subscriptions')
+      .upsert({
+        user_id: userId,
+        plan: 'era_plus',
+        status: 'active',
+        current_period_start: periodStart.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        cancelled_at: null,
+        era_plus_welcomed: false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+    return !error
+  } catch (e) {
+    return false
+  }
+}
+
+export const cancelEraPlus = async (userId) => {
+  try {
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+    return !error
+  } catch (e) {
+    return false
+  }
+}
+
+export const markWelcomed = async (userId) => {
+  try {
+    await supabase
+      .from('subscriptions')
+      .update({ era_plus_welcomed: true })
+      .eq('user_id', userId)
+  } catch (e) {}
+}
+
+export const getReferralCode = async (userId) => {
+  try {
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('referral_code, referral_count')
+      .eq('user_id', userId)
+      .single()
+    return data || null
+  } catch (e) {
+    return null
+  }
 }
 
 // ─── HISTORIQUE PERFORMANCES ─────────────────────
@@ -25,19 +80,18 @@ export const saveExerciseHistory = async (userId, workoutId, exercises) => {
     const rows = exercises
       .filter(ex => ex.weight_log || ex.last_weight)
       .map(ex => ({
-        user_id:       userId,
-        exercise_id:   ex.id,
+        user_id: userId,
+        exercise_id: ex.id,
         exercise_name: ex.display_name || ex.name_fr || ex.id,
-        workout_id:    workoutId || null,
-        sets:          ex.sets || 3,
-        reps:          ex.reps || '10',
-        weight_kg:     parseFloat(ex.weight_log || ex.last_weight) || null,
-        performed_at:  new Date().toISOString(),
+        workout_id: workoutId || null,
+        sets: ex.sets || 3,
+        reps: ex.reps || '10',
+        weight_kg: parseFloat(ex.weight_log || ex.last_weight) || null,
+        performed_at: new Date().toISOString(),
       }))
 
     if (rows.length === 0) return true
 
-    // Détecter les PRs
     for (const row of rows) {
       const { data: prev } = await supabase
         .from('exercise_history')
@@ -48,7 +102,7 @@ export const saveExerciseHistory = async (userId, workoutId, exercises) => {
         .limit(1)
         .single()
 
-      if (!prev || (row.weight_kg && row.weight_kg > prev.weight_kg)) {
+      if (!prev || (row.weight_kg && row.weight_kg > (prev?.weight_kg || 0))) {
         row.is_pr = true
       }
     }
@@ -91,19 +145,19 @@ export const getAllPRs = async (userId) => {
 
 // ─── SURCHARGE PROGRESSIVE ───────────────────────
 const PROGRESSION_STEP = {
-  STRENGTH:     { weight: 2.5, reps: 0 },
-  MUSCLE_GAIN:  { weight: 2.5, reps: 1 },
-  FAT_LOSS:     { weight: 0,   reps: 2 },
-  MAINTENANCE:  { weight: 2.5, reps: 1 },
-  PERFORMANCE:  { weight: 2.5, reps: 1 },
+  STRENGTH:    { weight: 2.5, reps: 0 },
+  MUSCLE_GAIN: { weight: 2.5, reps: 1 },
+  FAT_LOSS:    { weight: 0,   reps: 2 },
+  MAINTENANCE: { weight: 2.5, reps: 1 },
+  PERFORMANCE: { weight: 2.5, reps: 1 },
 }
 
 const PROGRESSION_TYPE = {
-  STRENGTH:     'weight',
-  MUSCLE_GAIN:  'mixed',
-  FAT_LOSS:     'reps',
-  MAINTENANCE:  'mixed',
-  PERFORMANCE:  'mixed',
+  STRENGTH:    'weight',
+  MUSCLE_GAIN: 'mixed',
+  FAT_LOSS:    'reps',
+  MAINTENANCE: 'mixed',
+  PERFORMANCE: 'mixed',
 }
 
 export const getProgressiveOverload = async (userId, exerciseId) => {
@@ -120,42 +174,37 @@ export const getProgressiveOverload = async (userId, exerciseId) => {
 
 export const calculateNextTarget = (current, goal, consecutiveSuccess) => {
   if (!current || consecutiveSuccess < 2) return null
-
   const step = PROGRESSION_STEP[goal] || PROGRESSION_STEP.MUSCLE_GAIN
   const type = PROGRESSION_TYPE[goal] || 'mixed'
-
   const currentWeight = parseFloat(current.current_weight_kg) || 0
-  const currentReps   = parseInt(current.current_reps) || 10
+  const currentReps = parseInt(current.current_reps) || 10
 
   if (type === 'weight') {
     return {
       weight: currentWeight + step.weight,
-      reps:   current.current_reps,
-      label:  `+${step.weight}kg`,
+      reps: current.current_reps,
+      label: `+${step.weight}kg`,
     }
   }
-
   if (type === 'reps') {
     return {
       weight: currentWeight,
-      reps:   String(currentReps + step.reps),
-      label:  `+${step.reps} reps`,
+      reps: String(currentReps + step.reps),
+      label: `+${step.reps} reps`,
     }
   }
-
-  // Mixed : alterner reps puis charge
   const cycle = Math.floor(consecutiveSuccess / 2) % 2
   if (cycle === 0) {
     return {
       weight: currentWeight,
-      reps:   String(currentReps + 1),
-      label:  '+1 rep',
+      reps: String(currentReps + 1),
+      label: '+1 rep',
     }
   } else {
     return {
       weight: currentWeight + step.weight,
-      reps:   current.current_reps,
-      label:  `+${step.weight}kg`,
+      reps: current.current_reps,
+      label: `+${step.weight}kg`,
     }
   }
 }
@@ -168,33 +217,30 @@ export const updateProgressiveOverload = async (
     const consecutive = allRepsCompleted
       ? (existing?.consecutive_success || 0) + 1
       : 0
-
     const type = PROGRESSION_TYPE[goal] || 'mixed'
-
     const next = calculateNextTarget(
       { current_weight_kg: weight, current_reps: reps },
       goal,
       consecutive
     )
-
     await supabase
       .from('progressive_overload')
       .upsert({
-        user_id:              userId,
-        exercise_id:          exerciseId,
-        current_weight_kg:    parseFloat(weight) || null,
-        current_reps:         String(reps),
-        current_sets:         sets || 3,
-        consecutive_success:  consecutive,
-        last_progression_at:  allRepsCompleted && consecutive >= 2
-          ? new Date().toISOString()
-          : existing?.last_progression_at || null,
-        next_target_weight:   next?.weight || null,
-        next_target_reps:     next?.reps || null,
-        progression_type:     type,
-        updated_at:           new Date().toISOString(),
+        user_id: userId,
+        exercise_id: exerciseId,
+        current_weight_kg: parseFloat(weight) || null,
+        current_reps: String(reps),
+        current_sets: sets || 3,
+        consecutive_success: consecutive,
+        last_progression_at:
+          allRepsCompleted && consecutive >= 2
+            ? new Date().toISOString()
+            : existing?.last_progression_at || null,
+        next_target_weight: next?.weight || null,
+        next_target_reps: next?.reps || null,
+        progression_type: type,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,exercise_id' })
-
     return next
   } catch (e) {
     console.error('updateProgressiveOverload error:', e)
@@ -207,23 +253,21 @@ export const getWeeklyStats = async (userId, weeksBack = 8) => {
   try {
     const since = new Date()
     since.setDate(since.getDate() - weeksBack * 7)
-
     const { data } = await supabase
       .from('weekly_stats')
       .select('*')
       .eq('user_id', userId)
       .gte('week_start', since.toISOString().split('T')[0])
       .order('week_start', { ascending: false })
-
     return data || []
   } catch (e) { return [] }
 }
 
 export const updateWeeklyStats = async (userId, workout) => {
   try {
-    const now       = new Date()
-    const day       = now.getDay()
-    const monday    = new Date(now)
+    const now = new Date()
+    const day = now.getDay()
+    const monday = new Date(now)
     monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1))
     monday.setHours(0, 0, 0, 0)
     const weekStart = monday.toISOString().split('T')[0]
@@ -242,22 +286,20 @@ export const updateWeeklyStats = async (userId, workout) => {
       const s = ex.sets || 3
       return acc + w * r * s
     }, 0)
-
     const prs = exercises.filter(ex => ex.is_pr).length
 
     await supabase
       .from('weekly_stats')
       .upsert({
-        user_id:         userId,
-        week_start:      weekStart,
-        total_volume:    (existing?.total_volume || 0) + volume,
-        total_sessions:  (existing?.total_sessions || 0) + 1,
-        total_sets:      (existing?.total_sets || 0) + (workout.totalSets || 0),
-        total_reps:      (existing?.total_reps || 0),
-        prs_count:       (existing?.prs_count || 0) + prs,
-        updated_at:      new Date().toISOString(),
+        user_id: userId,
+        week_start: weekStart,
+        total_volume: (existing?.total_volume || 0) + volume,
+        total_sessions: (existing?.total_sessions || 0) + 1,
+        total_sets: (existing?.total_sets || 0) + (workout.totalSets || 0),
+        total_reps: (existing?.total_reps || 0),
+        prs_count: (existing?.prs_count || 0) + prs,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_start' })
-
     return true
   } catch (e) {
     console.error('updateWeeklyStats error:', e)
@@ -291,21 +333,18 @@ export const getUserProgram = async (userId) => {
 
 export const startProgram = async (userId, programId) => {
   try {
-    // Désactiver l'ancien programme
     await supabase
       .from('user_programs')
       .update({ is_active: false })
       .eq('user_id', userId)
-
     const { error } = await supabase
       .from('user_programs')
       .insert({
-        user_id:    userId,
+        user_id: userId,
         program_id: programId,
         started_at: new Date().toISOString(),
-        is_active:  true,
+        is_active: true,
       })
-
     return !error
   } catch (e) { return false }
 }
