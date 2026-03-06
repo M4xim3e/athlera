@@ -55,4 +55,3 @@ Object.keys(paths).forEach(name => {
 })
 
 export default Icons
-src/components/ui/Icons.jsx
