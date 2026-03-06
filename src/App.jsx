@@ -4,7 +4,7 @@ import { LangProvider } from './contexts/LangContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProfileProvider, useProfile } from './contexts/ProfileContext'
 import { WorkoutProvider } from './contexts/WorkoutContext'
-import { SubscriptionProvider } from './contexts/SubscriptionContext'
+import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext'
 import SplashPage from './pages/SplashPage'
 import LangPickerPage from './pages/LangPickerPage'
 import AuthPage from './pages/AuthPage'
@@ -15,22 +15,24 @@ import WorkoutPage from './pages/WorkoutPage'
 import ProfilePage from './pages/ProfilePage'
 import CustomWorkoutPage from './pages/CustomWorkoutPage'
 import EraPlusPage from './pages/EraPlusPage'
+import EraWelcomePage from './pages/EraWelcomePage'
 import StatsPage from './pages/StatsPage'
 import ProgramsPage from './pages/ProgramsPage'
 
 function Router() {
   const { authed, loading: authLoading } = useAuth()
   const { hasProfile, loading: profLoading } = useProfile()
+  const { needsWelcome, loading: subLoading } = useSubscription()
   const [screen, setScreen] = useState('splash')
   const [splashDone, setSplashDone] = useState(false)
   const [loadingDone, setLoadingDone] = useState(false)
   const langPicked = !!localStorage.getItem('athlera_lang')
 
   useEffect(() => {
-    if (!authLoading && !profLoading) {
+    if (!authLoading && !profLoading && !subLoading) {
       setLoadingDone(true)
     }
-  }, [authLoading, profLoading])
+  }, [authLoading, profLoading, subLoading])
 
   useEffect(() => {
     if (!splashDone || !loadingDone) return
@@ -46,8 +48,12 @@ function Router() {
       setScreen('onboarding')
       return
     }
+    if (needsWelcome) {
+      setScreen('erawelcome')
+      return
+    }
     setScreen('dashboard')
-  }, [splashDone, loadingDone, authed, hasProfile, langPicked])
+  }, [splashDone, loadingDone, authed, hasProfile, langPicked, needsWelcome])
 
   const navigate = (dest) => setScreen(dest)
 
@@ -66,6 +72,9 @@ function Router() {
   }
   if (screen === 'onboarding') {
     return <OnboardingPage onDone={() => navigate('dashboard')} />
+  }
+  if (screen === 'erawelcome') {
+    return <EraWelcomePage onDone={() => navigate('dashboard')} />
   }
   if (screen === 'dashboard') {
     return <DashboardPage onNavigate={navigate} />
