@@ -9,4 +9,4 @@ useEffect(() => {
       window.location.reload()
     }, 2000)
   }
-}, [])
+}
