@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { useAuth }    from '../contexts/AuthContext'
+import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { useWorkout } from '../contexts/WorkoutContext'
-import { useLang }    from '../contexts/LangContext'
-import { useTheme }   from '../contexts/ThemeContext'
-import TopBar     from '../components/layout/TopBar'
+import { useLang } from '../contexts/LangContext'
+import { useTheme } from '../contexts/ThemeContext'
+import { useSubscription } from '../contexts/SubscriptionContext'
+import TopBar from '../components/layout/TopBar'
 import BurgerMenu from '../components/layout/BurgerMenu'
-import Card       from '../components/ui/Card'
-import Tag        from '../components/ui/Tag'
-import Button     from '../components/ui/Button'
-import Icons      from '../components/ui/Icons'
+import Card from '../components/ui/Card'
+import Tag from '../components/ui/Tag'
+import Button from '../components/ui/Button'
+import Icons from '../components/ui/Icons'
 import { greet, fmtDate, weekDelta } from '../utils/helpers'
 
 const GOAL_COLOR = {
@@ -27,9 +28,9 @@ const FOCUS_COLOR = {
 
 function Sparkline({ weights }) {
   if (!weights?.length || weights.length < 2) return null
-  const vals  = weights.slice(0, 10).map(w => parseFloat(w.value)).reverse()
-  const min   = Math.min(...vals)
-  const max   = Math.max(...vals)
+  const vals = weights.slice(0, 10).map(w => parseFloat(w.value)).reverse()
+  const min = Math.min(...vals)
+  const max = Math.max(...vals)
   const range = max - min || 1
   const W = 100, H = 30, pad = 3
   const pts = vals.map((v, i) => {
@@ -37,11 +38,10 @@ function Sparkline({ weights }) {
     const y = H - pad - ((v - min) / range) * (H - pad * 2)
     return `${x},${y}`
   }).join(' ')
-
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width={80} height={24} style={{ overflow: 'visible' }}>
-      <polyline points={pts} fill="none" stroke="var(--acc)" strokeWidth="1.8"
-        strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={pts} fill="none" stroke="var(--acc)"
+        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       <circle
         cx={pts.split(' ').pop().split(',')[0]}
         cy={pts.split(' ').pop().split(',')[1]}
@@ -52,19 +52,20 @@ function Sparkline({ weights }) {
 }
 
 export default function DashboardPage({ onNavigate }) {
-  const { user }                                = useAuth()
+  const { user } = useAuth()
   const { profile, weights, streak, addWeight } = useProfile()
-  const { history }                             = useWorkout()
-  const { t, lang }                             = useLang()
-  const { mode }                                = useTheme()
-  const [menuOpen,   setMenuOpen]   = useState(false)
+  const { history } = useWorkout()
+  const { t, lang } = useLang()
+  const { mode } = useTheme()
+  const { isPlus } = useSubscription()
+  const [menuOpen, setMenuOpen] = useState(false)
   const [editWeight, setEditWeight] = useState(false)
-  const [newWeight,  setNewWeight]  = useState('')
+  const [newWeight, setNewWeight] = useState('')
 
-  const name      = profile?.name || user?.user_metadata?.name || ''
-  const goalKey   = GOAL_LABEL[profile?.goal] || 'gMuscle'
-  const delta     = weekDelta(weights)
-  const lastWo    = history[0]
+  const name = profile?.name || user?.user_metadata?.name || ''
+  const goalKey = GOAL_LABEL[profile?.goal] || 'gMuscle'
+  const delta = weekDelta(weights)
+  const lastWo = history[0]
   const curWeight = weights[0]?.value
 
   const handleSaveWeight = async () => {
@@ -81,7 +82,12 @@ export default function DashboardPage({ onNavigate }) {
       paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
     }}>
       <TopBar onMenu={() => setMenuOpen(true)} />
-      {menuOpen && <BurgerMenu onClose={() => setMenuOpen(false)} onNavigate={onNavigate} />}
+      {menuOpen && (
+        <BurgerMenu
+          onClose={() => setMenuOpen(false)}
+          onNavigate={onNavigate}
+        />
+      )}
 
       <div style={{ padding: '20px 18px 0' }}>
 
@@ -97,14 +103,27 @@ export default function DashboardPage({ onNavigate }) {
                 {greet(t)}, {name || 'Athlète'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--txt-sub)', marginTop: 3 }}>
-                {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
-                  weekday: 'long', day: 'numeric', month: 'long',
-                })}
+                {new Date().toLocaleDateString(
+                  lang === 'fr' ? 'fr-FR' : 'en-GB',
+                  { weekday: 'long', day: 'numeric', month: 'long' }
+                )}
               </p>
             </div>
-            {profile?.goal && (
-              <Tag label={t(goalKey)} color={GOAL_COLOR[profile.goal] || 'acc'} />
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {isPlus && (
+                <span style={{
+                  background: 'var(--acc-dim)', border: '1px solid var(--acc)',
+                  borderRadius: 999, padding: '4px 10px',
+                  fontSize: 10, fontWeight: 800, color: 'var(--acc-txt)',
+                  letterSpacing: '0.07em', textTransform: 'uppercase',
+                }}>
+                  ERA+
+                </span>
+              )}
+              {profile?.goal && (
+                <Tag label={t(goalKey)} color={GOAL_COLOR[profile.goal] || 'acc'} />
+              )}
+            </div>
           </div>
         </div>
 
@@ -112,7 +131,6 @@ export default function DashboardPage({ onNavigate }) {
         <div className="fade-up fade-up-1" style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9, marginBottom: 16,
         }}>
-          {/* Streak */}
           <div style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 16, padding: '14px 10px', textAlign: 'center',
@@ -131,7 +149,6 @@ export default function DashboardPage({ onNavigate }) {
             </div>
           </div>
 
-          {/* Poids */}
           <div style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 16, padding: '14px 10px', textAlign: 'center',
@@ -150,7 +167,6 @@ export default function DashboardPage({ onNavigate }) {
             </div>
           </div>
 
-          {/* Séances */}
           <div style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 16, padding: '14px 10px', textAlign: 'center',
@@ -207,23 +223,25 @@ export default function DashboardPage({ onNavigate }) {
         </div>
 
         {/* CTA Créer séance custom */}
-        <div className="fade-up fade-up-2" style={{ marginBottom: 16 }}>
-          <button onClick={() => onNavigate('custom')} style={{
-            width: '100%', background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 18, padding: '16px 20px',
-            cursor: 'pointer', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            transition: 'border-color 0.15s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--acc)'}
-          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        <div className="fade-up fade-up-2" style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => onNavigate('custom')}
+            style={{
+              width: '100%', background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 18, padding: '16px 20px',
+              cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--acc)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
                 width: 40, height: 40, background: 'var(--acc-dim)',
-                borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
+                borderRadius: 12, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', flexShrink: 0,
               }}>
                 <Icons.edit size={18} color="var(--acc-txt)" />
               </div>
@@ -238,6 +256,108 @@ export default function DashboardPage({ onNavigate }) {
             </div>
             <Icons.chevRight size={16} color="var(--txt-muted)" />
           </button>
+        </div>
+
+        {/* ERA+ Section */}
+        <div className="fade-up fade-up-2" style={{ marginBottom: 16 }}>
+          {isPlus ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+              <button
+                onClick={() => onNavigate('stats')}
+                style={{
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 16, padding: '16px', cursor: 'pointer',
+                  fontFamily: 'inherit', textAlign: 'left',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--acc)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                <div style={{
+                  width: 36, height: 36, background: 'var(--acc-dim)',
+                  borderRadius: 10, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', marginBottom: 10,
+                }}>
+                  <Icons.activity size={16} color="var(--acc-txt)" />
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>
+                  {lang === 'fr' ? 'Statistiques' : 'Statistics'}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--txt-sub)', marginTop: 2 }}>
+                  {lang === 'fr' ? 'Volume, PRs, courbes' : 'Volume, PRs, curves'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => onNavigate('programs')}
+                style={{
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 16, padding: '16px', cursor: 'pointer',
+                  fontFamily: 'inherit', textAlign: 'left',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--acc)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                <div style={{
+                  width: 36, height: 36, background: 'var(--acc-dim)',
+                  borderRadius: 10, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', marginBottom: 10,
+                }}>
+                  <Icons.calendar size={16} color="var(--acc-txt)" />
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>
+                  {lang === 'fr' ? 'Programmes' : 'Programs'}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--txt-sub)', marginTop: 2 }}>
+                  {lang === 'fr' ? '8-12 semaines' : '8-12 weeks'}
+                </p>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => onNavigate('eraplus')}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, var(--acc-dim) 0%, var(--surface) 100%)',
+                border: '1px solid var(--acc)',
+                borderRadius: 18, padding: '16px 20px',
+                cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 40, height: 40,
+                  background: 'var(--acc)', borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Icons.bolt size={18} color="var(--txt-inv)" />
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--acc-txt)' }}>
+                      ERA+
+                    </p>
+                    <span style={{
+                      background: 'var(--acc)', borderRadius: 999, padding: '2px 7px',
+                      fontSize: 9, fontWeight: 800, color: 'var(--txt-inv)',
+                      letterSpacing: '0.06em',
+                    }}>
+                      6.99€/mois
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
+                    {lang === 'fr'
+                      ? 'Surcharge progressive, stats, programmes'
+                      : 'Progressive overload, stats, programs'}
+                  </p>
+                </div>
+              </div>
+              <Icons.chevRight size={16} color="var(--acc-txt)" />
+            </button>
+          )}
         </div>
 
         {/* Carte poids */}
@@ -287,15 +407,10 @@ export default function DashboardPage({ onNavigate }) {
               </div>
             </div>
 
-            {/* Saisie poids — boutons compacts qui ne débordent pas */}
             {editWeight && (
-              <div style={{
-                display: 'flex', gap: 8,
-                animation: 'fadeUp 0.18s cubic-bezier(0.16,1,0.3,1)',
-              }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input
-                  type="number"
-                  value={newWeight}
+                  type="number" value={newWeight}
                   onChange={e => setNewWeight(e.target.value)}
                   placeholder="75.0"
                   style={{
@@ -306,30 +421,21 @@ export default function DashboardPage({ onNavigate }) {
                     color: 'var(--txt)', fontFamily: 'inherit', outline: 'none',
                   }}
                 />
-                <button
-                  onClick={handleSaveWeight}
-                  style={{
-                    flexShrink: 0,
-                    background: 'var(--acc)', border: 'none', borderRadius: 11,
-                    padding: '0 16px', height: 46, cursor: 'pointer',
-                    color: 'var(--txt-inv)', fontWeight: 700, fontSize: 13,
-                    fontFamily: 'inherit', whiteSpace: 'nowrap',
-                  }}
-                >
+                <button onClick={handleSaveWeight} style={{
+                  flexShrink: 0, background: 'var(--acc)', border: 'none',
+                  borderRadius: 11, padding: '0 16px', height: 46,
+                  cursor: 'pointer', color: 'var(--txt-inv)',
+                  fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
+                }}>
                   {t('save')}
                 </button>
-                <button
-                  onClick={() => setEditWeight(false)}
-                  style={{
-                    flexShrink: 0,
-                    background: 'var(--surface-up)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 11, padding: '0 14px', height: 46,
-                    cursor: 'pointer', color: 'var(--txt-sub)',
-                    fontWeight: 600, fontSize: 13,
-                    fontFamily: 'inherit', whiteSpace: 'nowrap',
-                  }}
-                >
+                <button onClick={() => setEditWeight(false)} style={{
+                  flexShrink: 0, background: 'var(--surface-up)',
+                  border: '1px solid var(--border)', borderRadius: 11,
+                  padding: '0 14px', height: 46, cursor: 'pointer',
+                  color: 'var(--txt-sub)', fontWeight: 600,
+                  fontSize: 13, fontFamily: 'inherit',
+                }}>
                   {t('cancel')}
                 </button>
               </div>
