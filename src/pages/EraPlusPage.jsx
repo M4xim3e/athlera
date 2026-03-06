@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSubscription } from '../contexts/SubscriptionContext'
 import { useLang } from '../contexts/LangContext'
-import { createCheckoutSession } from '../services/eraPlus'
+import { createCheckoutSession } from '../services/stripe'
 import TopBar from '../components/layout/TopBar'
 import Icons from '../components/ui/Icons'
 
@@ -18,14 +18,14 @@ const FEATURES = [
     fr: 'Historique & courbes de progression',
     en: 'History & progression curves',
     desc_fr: 'Visualise ta progression sur chaque exercice.',
-    desc_en: 'Visualize your progress on each exercise over time.',
+    desc_en: 'Visualize your progress on each exercise.',
   },
   {
     icon: 'calendar',
     fr: 'Programmes structurés 8-12 semaines',
     en: 'Structured 8-12 week programs',
     desc_fr: 'PPL, Push/Pull, Force — progression intégrée.',
-    desc_en: 'PPL, Push/Pull, Strength — built-in weekly progression.',
+    desc_en: 'PPL, Push/Pull, Strength — built-in progression.',
   },
   {
     icon: 'bolt',
@@ -40,13 +40,23 @@ export default function EraPlusPage({ onBack }) {
   const { isPlus, isCancelled, periodEnd } = useSubscription()
   const { lang } = useLang()
   const [loading, setLoading] = useState(false)
+  const [errMsg,  setErrMsg]  = useState('')
 
   const handleSubscribe = async () => {
     setLoading(true)
-    const url = await createCheckoutSession()
-    if (url) {
-      window.location.href = url
-    } else {
+    setErrMsg('')
+    try {
+      const url = await createCheckoutSession()
+      if (url) {
+        window.location.href = url
+      } else {
+        setErrMsg(lang === 'fr'
+          ? 'Impossible de lancer le paiement. Vérifie ta connexion.'
+          : 'Could not start payment. Check your connection.')
+        setLoading(false)
+      }
+    } catch (e) {
+      setErrMsg(e.message)
       setLoading(false)
     }
   }
@@ -134,20 +144,14 @@ export default function EraPlusPage({ onBack }) {
                       : `Active until ${fmtDate(periodEnd)}`}
                   </span>
                 </div>
-                <button
-                  onClick={handleSubscribe}
-                  disabled={loading}
-                  style={{
-                    width: '100%', background: 'var(--acc)', border: 'none',
-                    borderRadius: 16, padding: '14px', cursor: 'pointer',
-                    fontFamily: "'Bebas Neue', sans-serif",
-                    fontSize: 18, letterSpacing: '0.05em', color: 'var(--txt-inv)',
-                    opacity: loading ? 0.7 : 1,
-                  }}
-                >
-                  {loading
-                    ? (lang === 'fr' ? 'Redirection...' : 'Redirecting...')
-                    : (lang === 'fr' ? 'Renouveler ERA+' : 'Renew ERA+')}
+                <button onClick={handleSubscribe} disabled={loading} style={{
+                  width: '100%', background: 'var(--acc)', border: 'none',
+                  borderRadius: 16, padding: '14px', cursor: 'pointer',
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontSize: 18, letterSpacing: '0.05em', color: 'var(--txt-inv)',
+                  opacity: loading ? 0.7 : 1,
+                }}>
+                  {loading ? '...' : (lang === 'fr' ? 'Renouveler ERA+' : 'Renew ERA+')}
                 </button>
               </div>
             ) : isPlus ? (
@@ -161,22 +165,20 @@ export default function EraPlusPage({ onBack }) {
                 </span>
               </div>
             ) : (
-              <button
-                onClick={handleSubscribe}
-                disabled={loading}
-                style={{
+              <>
+                <button onClick={handleSubscribe} disabled={loading} style={{
                   width: '100%', background: 'var(--acc)', border: 'none',
                   borderRadius: 16, padding: '16px', cursor: loading ? 'wait' : 'pointer',
                   fontFamily: "'Bebas Neue', sans-serif",
                   fontSize: 20, letterSpacing: '0.05em', color: 'var(--txt-inv)',
-                  opacity: loading ? 0.7 : 1,
-                  transition: 'opacity 0.15s',
-                }}
-              >
-                {loading
-                  ? (lang === 'fr' ? 'Redirection vers Stripe...' : 'Redirecting to Stripe...')
-                  : (lang === 'fr' ? 'Activer ERA+' : 'Activate ERA+')}
-              </button>
+                  opacity: loading ? 0.7 : 1, transition: 'opacity 0.15s',
+                }}>
+                  {loading ? '⟳' : (lang === 'fr' ? 'Activer ERA+ — 6.99€/mois' : 'Activate ERA+ — €6.99/mo')}
+                </button>
+                {errMsg && (
+                  <p style={{ fontSize: 12, color: 'var(--err)', marginTop: 10 }}>{errMsg}</p>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -216,10 +218,7 @@ export default function EraPlusPage({ onBack }) {
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 18, overflow: 'hidden', marginBottom: 16,
         }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-            borderBottom: '1px solid var(--border)',
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid var(--border)' }}>
             <div style={{ padding: '12px 14px' }} />
             <div style={{
               padding: '12px 14px', textAlign: 'center',
@@ -247,34 +246,18 @@ export default function EraPlusPage({ onBack }) {
               display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
               borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
             }}>
-              <div style={{ padding: '12px 14px', fontSize: 13, color: 'var(--txt)' }}>
-                {row.label}
+              <div style={{ padding: '12px 14px', fontSize: 13, color: 'var(--txt)' }}>{row.label}</div>
+              <div style={{ padding: '12px 14px', textAlign: 'center', borderLeft: '1px solid var(--border)' }}>
+                {row.free ? <Icons.check size={14} color="var(--ok)" /> : <Icons.x size={14} color="var(--txt-muted)" />}
               </div>
-              <div style={{
-                padding: '12px 14px', textAlign: 'center',
-                borderLeft: '1px solid var(--border)',
-              }}>
-                {row.free
-                  ? <Icons.check size={14} color="var(--ok)" />
-                  : <Icons.x size={14} color="var(--txt-muted)" />}
-              </div>
-              <div style={{
-                padding: '12px 14px', textAlign: 'center',
-                borderLeft: '1px solid var(--border)',
-                background: 'var(--acc-dim)',
-              }}>
-                {row.plus
-                  ? <Icons.check size={14} color="var(--acc-txt)" />
-                  : <Icons.x size={14} color="var(--txt-muted)" />}
+              <div style={{ padding: '12px 14px', textAlign: 'center', borderLeft: '1px solid var(--border)', background: 'var(--acc-dim)' }}>
+                {row.plus ? <Icons.check size={14} color="var(--acc-txt)" /> : <Icons.x size={14} color="var(--txt-muted)" />}
               </div>
             </div>
           ))}
         </div>
 
-        <p style={{
-          textAlign: 'center', fontSize: 11,
-          color: 'var(--txt-muted)', lineHeight: 1.6,
-        }}>
+        <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.6 }}>
           {lang === 'fr'
             ? "Résiliable à tout moment. Accès maintenu jusqu'à fin de période."
             : 'Cancel anytime. Access maintained until end of period.'}
