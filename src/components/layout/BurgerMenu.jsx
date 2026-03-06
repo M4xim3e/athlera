@@ -32,6 +32,10 @@ export default function BurgerMenu({ onClose, onNavigate }) {
   const handleSignOut = async () => { onClose(); await signOut() }
   const currentTheme  = THEMES.find(th => th.id === mode) || THEMES[0]
 
+  // isPlus = abonnement actif (même si cancel_at_period_end)
+  // isCancelled = cancel_at_period_end = true → on masque le bouton "Annuler"
+  const canCancel = isPlus && !isCancelled
+
   const fmtDate = (d) => d
     ? new Date(d).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
         day: 'numeric', month: 'long', year: 'numeric',
@@ -149,7 +153,7 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                   onClick={() => handleNav('programs')}
                   accent
                 />
-                {isPlus && (
+                {isPlus && !isCancelled && (
                   <MenuItem
                     icon={<Icons.users size={17} color="var(--acc-txt)" />}
                     label={lang === 'fr' ? 'Inviter un ami' : 'Invite a friend'}
@@ -331,7 +335,7 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                   color: isPlus ? 'var(--acc-txt)' : 'var(--warn)',
                 }}>
                   {isCancelled
-                    ? (lang === 'fr' ? 'Annulé' : 'Cancelled')
+                    ? (lang === 'fr' ? 'Annulé — accès maintenu' : 'Cancelled — access maintained')
                     : (lang === 'fr' ? 'Actif' : 'Active')}
                 </span>
               </div>
@@ -362,23 +366,30 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                   onClick={() => handleNav('programs')}
                   accent
                 />
-                <MenuItem
-                  icon={<Icons.users size={17} color="var(--acc-txt)" />}
-                  label={lang === 'fr' ? 'Inviter un ami' : 'Invite a friend'}
-                  onClick={handleReferral}
-                  accent
-                />
-                <Divider />
-                <MenuItem
-                  icon={<Icons.x size={17} color="var(--err)" />}
-                  label={lang === 'fr' ? 'Annuler ERA+' : 'Cancel ERA+'}
-                  onClick={() => setShowCancelConfirm(true)}
-                  danger
-                />
+                {!isCancelled && (
+                  <MenuItem
+                    icon={<Icons.users size={17} color="var(--acc-txt)" />}
+                    label={lang === 'fr' ? 'Inviter un ami' : 'Invite a friend'}
+                    onClick={handleReferral}
+                    accent
+                  />
+                )}
+                {/* Bouton annulation — uniquement si PAS encore annulé */}
+                {canCancel && (
+                  <>
+                    <Divider />
+                    <MenuItem
+                      icon={<Icons.x size={17} color="var(--err)" />}
+                      label={lang === 'fr' ? 'Annuler ERA+' : 'Cancel ERA+'}
+                      onClick={() => setShowCancelConfirm(true)}
+                      danger
+                    />
+                  </>
+                )}
               </>
             )}
 
-            {isCancelled && !isPlus && (
+            {isCancelled && (
               <button
                 onClick={() => handleNav('eraplus')}
                 style={{
