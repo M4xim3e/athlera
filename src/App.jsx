@@ -4,6 +4,7 @@ import { LangProvider } from './contexts/LangContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProfileProvider, useProfile } from './contexts/ProfileContext'
 import { WorkoutProvider } from './contexts/WorkoutContext'
+import { SubscriptionProvider } from './contexts/SubscriptionContext'
 import SplashPage from './pages/SplashPage'
 import LangPickerPage from './pages/LangPickerPage'
 import AuthPage from './pages/AuthPage'
@@ -13,6 +14,9 @@ import GeneratePage from './pages/GeneratePage'
 import WorkoutPage from './pages/WorkoutPage'
 import ProfilePage from './pages/ProfilePage'
 import CustomWorkoutPage from './pages/CustomWorkoutPage'
+import EraPlusPage from './pages/EraPlusPage'
+import StatsPage from './pages/StatsPage'
+import ProgramsPage from './pages/ProgramsPage'
 
 function Router() {
   const { authed, loading: authLoading } = useAuth()
@@ -56,9 +60,7 @@ function Router() {
   if (screen === 'auth') {
     return (
       <AuthPage
-        onDone={(needsOnboarding) =>
-          navigate(needsOnboarding ? 'onboarding' : 'dashboard')
-        }
+        onDone={(nb) => navigate(nb ? 'onboarding' : 'dashboard')}
       />
     )
   }
@@ -95,6 +97,25 @@ function Router() {
       />
     )
   }
+  if (screen === 'eraplus') {
+    return <EraPlusPage onBack={() => navigate('dashboard')} />
+  }
+  if (screen === 'stats') {
+    return (
+      <StatsPage
+        onBack={() => navigate('dashboard')}
+        onUpgrade={() => navigate('eraplus')}
+      />
+    )
+  }
+  if (screen === 'programs') {
+    return (
+      <ProgramsPage
+        onBack={() => navigate('dashboard')}
+        onUpgrade={() => navigate('eraplus')}
+      />
+    )
+  }
   return null
 }
 
@@ -104,9 +125,11 @@ export default function App() {
       <LangProvider>
         <AuthProvider>
           <ProfileProvider>
-            <WorkoutProvider>
-              <Router />
-            </WorkoutProvider>
+            <SubscriptionProvider>
+              <WorkoutProvider>
+                <Router />
+              </WorkoutProvider>
+            </SubscriptionProvider>
           </ProfileProvider>
         </AuthProvider>
       </LangProvider>
