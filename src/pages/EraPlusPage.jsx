@@ -43,16 +43,32 @@ export default function EraPlusPage({ onBack }) {
   const { lang } = useLang()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+import { useState } from 'react'
+import { useSubscription } from '../contexts/SubscriptionContext'
+import { useLang } from '../contexts/LangContext'
+import { createCheckoutSession } from '../services/eraPlus'
+import TopBar from '../components/layout/TopBar'
+import Icons from '../components/ui/Icons'
+
+// ... (FEATURES identiques)
+
+export default function EraPlusPage({ onBack }) {
+  const { isPlus, isCancelled, periodEnd } = useSubscription()
+  const { lang } = useLang()
+  const [loading, setLoading] = useState(false)
 
   const handleSubscribe = async () => {
     setLoading(true)
-    const ok = await activateEraPlus(user.id)
-    if (ok) {
-      await refresh()
-      setSuccess(true)
+    const url = await createCheckoutSession()
+    if (url) {
+      window.location.href = url  // Redirige vers Stripe Checkout
+    } else {
+      setLoading(false)
     }
-    setLoading(false)
   }
+
+  // ... reste identique
+}
 
   const fmtDate = (d) => d
     ? d.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
