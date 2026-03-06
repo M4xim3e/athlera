@@ -8,7 +8,6 @@ import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionCo
 import SplashPage from './pages/SplashPage'
 import LangPickerPage from './pages/LangPickerPage'
 import AuthPage from './pages/AuthPage'
-import OnboardingPage from './pages/OnboardingPage'
 import DashboardPage from './pages/DashboardPage'
 import GeneratePage from './pages/GeneratePage'
 import WorkoutPage from './pages/WorkoutPage'
@@ -24,31 +23,29 @@ function Router() {
   const { hasProfile, loading: profLoading } = useProfile()
   const { needsWelcome, loading: subLoading, refresh } = useSubscription()
 
-  const [screen, setScreen] = useState('splash')
-  const [splashDone, setSplashDone] = useState(false)
+  const [screen,      setScreen]      = useState('splash')
+  const [splashDone,  setSplashDone]  = useState(false)
   const [loadingDone, setLoadingDone] = useState(false)
 
   const langPicked = !!localStorage.getItem('athlera_lang')
 
-  // Détecter le retour depuis Stripe Checkout
+  // Détecter retour Stripe
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('era_plus') === 'success') {
       window.history.replaceState({}, '', '/')
-      setTimeout(() => {
-        refresh()
-      }, 2000)
+      setTimeout(() => refresh(), 2500)
     }
   }, [])
 
-  // Marquer quand tout a fini de charger
+  // Attendre que tout soit chargé
   useEffect(() => {
     if (!authLoading && !profLoading && !subLoading) {
       setLoadingDone(true)
     }
   }, [authLoading, profLoading, subLoading])
 
-  // Naviguer quand splash ET loading sont terminés
+  // Routing principal
   useEffect(() => {
     if (!splashDone || !loadingDone) return
     if (!langPicked) {
@@ -60,7 +57,7 @@ function Router() {
       return
     }
     if (!hasProfile) {
-      setScreen('onboarding')
+      setScreen('auth')
       return
     }
     if (needsWelcome) {
@@ -79,16 +76,7 @@ function Router() {
     return <LangPickerPage onDone={() => navigate('auth')} />
   }
   if (screen === 'auth') {
-    return (
-      <AuthPage
-        onDone={(needsOnboarding) =>
-          navigate(needsOnboarding ? 'onboarding' : 'dashboard')
-        }
-      />
-    )
-  }
-  if (screen === 'onboarding') {
-    return <OnboardingPage onDone={() => navigate('dashboard')} />
+    return <AuthPage onDone={() => navigate('dashboard')} />
   }
   if (screen === 'erawelcome') {
     return <EraWelcomePage onDone={() => navigate('dashboard')} />
