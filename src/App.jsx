@@ -45,12 +45,13 @@ function Router() {
     }
   }, [authLoading, profLoading, subLoading])
 
-  // Si déjà connecté et chargé → skip la splash directement
+  // ✅ FIX SESSION : Si déjà connecté au chargement → skip la splash
   useEffect(() => {
-    if (loadingDone && authed && hasProfile && !splashDone) {
+    if (!loadingDone) return
+    if (authed && hasProfile) {
       setSplashDone(true)
     }
-  }, [loadingDone, authed, hasProfile, splashDone])
+  }, [loadingDone])
 
   // Routing principal
   useEffect(() => {
