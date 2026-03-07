@@ -30,15 +30,18 @@ export function SubscriptionProvider({ children }) {
     ? new Date(subscription.current_period_end)
     : null
 
+  // isPlus = abonnement actif (inclut les abonnements annulés mais encore valides)
   const isPlus =
     subscription?.plan === 'era_plus' &&
     subscription?.status === 'active' &&
     (!periodEnd || periodEnd > now)
 
-  const isCancelled =
-    subscription?.plan === 'era_plus' &&
-    subscription?.status === 'cancelled' &&
-    periodEnd && periodEnd > now
+  // isCancelled = l'utilisateur a demandé l'annulation mais garde encore l'accès
+  // On utilise cancel_at_period_end (nouvelle colonne) OU cancelled_at (ancienne)
+  const isCancelled = isPlus && !!(
+    subscription?.cancel_at_period_end === true ||
+    subscription?.cancelled_at != null
+  )
 
   const needsWelcome =
     isPlus && subscription?.era_plus_welcomed === false
@@ -57,5 +60,3 @@ export function SubscriptionProvider({ children }) {
     </SubscriptionContext.Provider>
   )
 }
-
-export const useSubscription = () => useContext(SubscriptionContext)
