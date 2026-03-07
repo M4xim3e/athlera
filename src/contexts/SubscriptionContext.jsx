@@ -60,3 +60,4 @@ export function SubscriptionProvider({ children }) {
     </SubscriptionContext.Provider>
   )
 }
+export const useSubscription = () => useContext(SubscriptionContext)
