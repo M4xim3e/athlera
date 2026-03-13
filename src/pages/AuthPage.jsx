@@ -4,11 +4,11 @@ import { useLang } from '../contexts/LangContext'
 import Icons from '../components/ui/Icons'
 
 const GOALS = [
-  { id: 'MUSCLE_GAIN', fr: 'Prise de muscle',  en: 'Muscle gain',  icon: 'dumbbell' },
-  { id: 'FAT_LOSS',    fr: 'Perte de gras',    en: 'Fat loss',     icon: 'flame'    },
-  { id: 'STRENGTH',    fr: 'Force',             en: 'Strength',     icon: 'bolt'     },
-  { id: 'MAINTENANCE', fr: 'Maintien',          en: 'Maintenance',  icon: 'target'   },
-  { id: 'PERFORMANCE', fr: 'Performance',       en: 'Performance',  icon: 'activity' },
+  { id: 'MUSCLE_GAIN', fr: 'Prise de muscle',    en: 'Muscle gain',    icon: 'dumbbell' },
+  { id: 'FAT_LOSS',    fr: 'Perte de poids',     en: 'Weight loss',    icon: 'flame'    },
+  { id: 'STRENGTH',    fr: 'Force',               en: 'Strength',       icon: 'bolt'     },
+  { id: 'MAINTENANCE', fr: 'Tonification',        en: 'Toning',         icon: 'target'   },
+  { id: 'PERFORMANCE', fr: 'Performance',         en: 'Performance',    icon: 'activity' },
 ]
 
 const LEVELS = [
@@ -128,6 +128,7 @@ export default function AuthPage({ onDone }) {
         goal,                // déjà en majuscules: MUSCLE_GAIN, FAT_LOSS, etc.
         level,               // déjà en majuscules: BEGINNER, INTERMEDIATE, ADVANCED
         freq,
+        has_gym:    true,    // accès salle par défaut
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' })
