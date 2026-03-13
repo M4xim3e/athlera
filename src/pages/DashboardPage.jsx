@@ -4,7 +4,6 @@ import { useProfile } from '../contexts/ProfileContext'
 import { useWorkout } from '../contexts/WorkoutContext'
 import { useLang } from '../contexts/LangContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { useSubscription } from '../contexts/SubscriptionContext'
 import TopBar from '../components/layout/TopBar'
 import BurgerMenu from '../components/layout/BurgerMenu'
 import Card from '../components/ui/Card'
@@ -57,7 +56,6 @@ export default function DashboardPage({ onNavigate }) {
   const { history } = useWorkout()
   const { t, lang } = useLang()
   const { mode } = useTheme()
-  const { isPlus } = useSubscription()
   const [menuOpen, setMenuOpen] = useState(false)
   const [editWeight, setEditWeight] = useState(false)
   const [newWeight, setNewWeight] = useState('')
@@ -110,16 +108,6 @@ export default function DashboardPage({ onNavigate }) {
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {isPlus && (
-                <span style={{
-                  background: 'var(--acc-dim)', border: '1px solid var(--acc)',
-                  borderRadius: 999, padding: '4px 10px',
-                  fontSize: 10, fontWeight: 800, color: 'var(--acc-txt)',
-                  letterSpacing: '0.07em', textTransform: 'uppercase',
-                }}>
-                  ERA+
-                </span>
-              )}
               {profile?.goal && (
                 <Tag label={t(goalKey)} color={GOAL_COLOR[profile.goal] || 'acc'} />
               )}
@@ -258,10 +246,9 @@ export default function DashboardPage({ onNavigate }) {
           </button>
         </div>
 
-        {/* ERA+ Section */}
+        {/* Stats & Programmes */}
         <div className="fade-up fade-up-2" style={{ marginBottom: 16 }}>
-          {isPlus ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
               <button
                 onClick={() => onNavigate('stats')}
                 style={{
@@ -314,51 +301,7 @@ export default function DashboardPage({ onNavigate }) {
                 </p>
               </button>
             </div>
-          ) : (
-            <button
-              onClick={() => onNavigate('eraplus')}
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, var(--acc-dim) 0%, var(--surface) 100%)',
-                border: '1px solid var(--acc)',
-                borderRadius: 18, padding: '16px 20px',
-                cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 40, height: 40,
-                  background: 'var(--acc)', borderRadius: 12,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <Icons.bolt size={18} color="var(--txt-inv)" />
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--acc-txt)' }}>
-                      ERA+
-                    </p>
-                    <span style={{
-                      background: 'var(--acc)', borderRadius: 999, padding: '2px 7px',
-                      fontSize: 9, fontWeight: 800, color: 'var(--txt-inv)',
-                      letterSpacing: '0.06em',
-                    }}>
-                      6.99€/mois
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
-                    {lang === 'fr'
-                      ? 'Surcharge progressive, stats, programmes'
-                      : 'Progressive overload, stats, programs'}
-                  </p>
-                </div>
-              </div>
-              <Icons.chevRight size={16} color="var(--acc-txt)" />
-            </button>
-          )}
-        </div>
+          </div>
 
         {/* Carte poids */}
         <div className="fade-up fade-up-3" style={{ marginBottom: 16 }}>

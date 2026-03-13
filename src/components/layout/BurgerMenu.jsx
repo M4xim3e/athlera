@@ -6,9 +6,9 @@ import { useProfile } from '../../contexts/ProfileContext'
 import Icons from '../ui/Icons'
 
 const THEMES = [
-  { id: 'black-era', label: 'Black Era', desc: 'Sombre & électrique' },
-  { id: 'white-era', label: 'White Era', desc: 'Clair & épuré'       },
-  { id: 'pink-era',  label: 'Pink Era',  desc: 'Rose & bold'         },
+  { id: 'black-era', label: 'Black',      desc: 'Sombre & électrique' },
+  { id: 'white-era', label: 'White',      desc: 'Clair & épuré'       },
+  { id: 'pink-era',  label: 'Pink',       desc: 'Rose & bold'         },
 ]
 
 export default function BurgerMenu({ onClose, onNavigate }) {
@@ -70,15 +70,6 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                 }}>
                   {view === 'theme' ? 'Thème' : (profile?.name || 'Athlète')}
                 </p>
-                {view === 'main' && (
-                  <span style={{
-                    background: 'var(--acc)', borderRadius: 999,
-                    padding: '2px 8px', fontSize: 9, fontWeight: 800,
-                    color: 'var(--txt-inv)', letterSpacing: '0.07em',
-                  }}>
-                    ERA+
-                  </span>
-                )}
               </div>
               {view === 'main' && (
                 <p style={{ fontSize: 12, color: 'var(--txt-sub)', marginTop: 2 }}>
@@ -103,22 +94,16 @@ export default function BurgerMenu({ onClose, onNavigate }) {
             overflowY: 'auto',
           }}>
 
-            <SectionLabel label="ERA+" />
             <MenuItem
-              icon={<Icons.activity size={17} color="var(--acc-txt)" />}
+              icon={<Icons.activity size={17} color="var(--txt-sub)" />}
               label={lang === 'fr' ? 'Statistiques' : 'Statistics'}
               onClick={() => handleNav('stats')}
-              accent
             />
             <MenuItem
-              icon={<Icons.calendar size={17} color="var(--acc-txt)" />}
+              icon={<Icons.calendar size={17} color="var(--txt-sub)" />}
               label={lang === 'fr' ? 'Programmes' : 'Programs'}
               onClick={() => handleNav('programs')}
-              accent
             />
-            <Divider />
-
-            <SectionLabel label={lang === 'fr' ? 'Navigation' : 'Navigation'} />
             <MenuItem
               icon={<Icons.user size={17} color="var(--txt-sub)" />}
               label={t('menuProf')}
@@ -253,7 +238,7 @@ export default function BurgerMenu({ onClose, onNavigate }) {
         {/* Footer */}
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center' }}>
-            ATHLERA ✦ ERA+ · {currentTheme.label} · v0.6
+            ATHLERA · {currentTheme.label} · v0.6
           </p>
         </div>
       </div>

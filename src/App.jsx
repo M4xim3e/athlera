@@ -13,7 +13,6 @@ import GeneratePage from './pages/GeneratePage'
 import WorkoutPage from './pages/WorkoutPage'
 import ProfilePage from './pages/ProfilePage'
 import CustomWorkoutPage from './pages/CustomWorkoutPage'
-import EraPlusPage from './pages/EraPlusPage'
 import StatsPage from './pages/StatsPage'
 import ProgramsPage from './pages/ProgramsPage'
 
@@ -85,9 +84,6 @@ function Router() {
         onSaved={() => navigate('dashboard')}
       />
     )
-  }
-  if (screen === 'eraplus') {
-    return <EraPlusPage onBack={() => navigate('dashboard')} />
   }
   if (screen === 'stats') {
     return (
