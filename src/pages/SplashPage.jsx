@@ -6,14 +6,14 @@ export default function SplashPage({ onDone }) {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    setTimeout(() => setVisible(true), 50)
+    setTimeout(() => setVisible(true), 30)
     const progressInterval = setInterval(() => {
       setProgress(p => {
         if (p >= 100) { clearInterval(progressInterval); return 100 }
-        return p + 5
+        return p + 10
       })
-    }, 90)
-    const timer = setTimeout(() => onDone(), 2200)
+    }, 60)
+    const timer = setTimeout(() => onDone(), 700)
     return () => {
       clearInterval(progressInterval)
       clearTimeout(timer)

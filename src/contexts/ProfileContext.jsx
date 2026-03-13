@@ -30,21 +30,27 @@ export function ProfileProvider({ children }) {
 
   const load = async () => {
     setLoading(true)
+    // 1. Charger le profil en priorité (nécessaire pour le routage)
     try {
-      const [p, w, s] = await Promise.all([
-        getProfile(user.id),
-        getWeightHistory(user.id),
-        getStreak(user.id),
-      ])
+      const p = await getProfile(user.id)
       setProfile(p)
       setHasProfile(!!(p?.goal))
-      setWeights(w || [])
-      setStreak(s || { current: 0, longest: 0 })
     } catch (e) {
       console.error('Profile load error:', e)
       setHasProfile(false)
     }
     setLoading(false)
+    // 2. Charger poids & streak en arrière-plan (non-bloquant)
+    try {
+      const [w, s] = await Promise.all([
+        getWeightHistory(user.id),
+        getStreak(user.id),
+      ])
+      setWeights(w || [])
+      setStreak(s || { current: 0, longest: 0 })
+    } catch (e) {
+      console.error('Background load error:', e)
+    }
   }
 
   const saveProfile = async (data) => {
