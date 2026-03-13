@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth }         from '../contexts/AuthContext'
 import { useLang }         from '../contexts/LangContext'
-import { useSubscription } from '../contexts/SubscriptionContext'
 import { getPrograms, getUserProgram, startProgram } from '../services/eraPlus'
 import TopBar from '../components/layout/TopBar'
 import Icons  from '../components/ui/Icons'
@@ -22,7 +21,6 @@ const GOAL_FR = {
 export default function ProgramsPage({ onBack, onUpgrade }) {
   const { user }   = useAuth()
   const { lang }   = useLang()
-  const { isPlus } = useSubscription()
 
   const [programs,    setPrograms]    = useState([])
   const [userProgram, setUserProgram] = useState(null)
@@ -46,52 +44,12 @@ export default function ProgramsPage({ onBack, onUpgrade }) {
   }
 
   const handleStart = async (programId) => {
-    if (!isPlus) { onUpgrade?.(); return }
     setStarting(programId)
     await startProgram(user.id, programId)
     await load()
     setStarting(null)
   }
 
-  if (!isPlus) {
-    return (
-      <div style={{ minHeight: '100dvh', background: 'var(--bg-base)' }}>
-        <TopBar onBack={onBack} />
-        <div style={{
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          minHeight: 'calc(100dvh - 80px)', padding: '0 32px', textAlign: 'center',
-        }}>
-          <div style={{
-            width: 64, height: 64, background: 'var(--acc-dim)',
-            borderRadius: 20, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', marginBottom: 20,
-          }}>
-            <Icons.calendar size={28} color="var(--acc-txt)" />
-          </div>
-          <h2 style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 32, color: 'var(--txt)', marginBottom: 12,
-          }}>
-            {lang === 'fr' ? 'Feature ERA+' : 'ERA+ Feature'}
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--txt-sub)', lineHeight: 1.6, marginBottom: 24 }}>
-            {lang === 'fr'
-              ? 'Les programmes structurés sont réservés aux membres ERA+.'
-              : 'Structured programs are reserved for ERA+ members.'}
-          </p>
-          <button onClick={onUpgrade} style={{
-            background: 'var(--acc)', border: 'none', borderRadius: 16,
-            padding: '14px 28px', cursor: 'pointer',
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 18, letterSpacing: '0.05em', color: 'var(--txt-inv)',
-          }}>
-            {lang === 'fr' ? 'Découvrir ERA+' : 'Discover ERA+'}
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div style={{
@@ -103,16 +61,6 @@ export default function ProgramsPage({ onBack, onUpgrade }) {
       <div style={{ padding: '20px 18px 0' }}>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{
-              background: 'var(--acc-dim)', border: '1px solid var(--acc)',
-              borderRadius: 999, padding: '3px 10px',
-              fontSize: 10, fontWeight: 800, color: 'var(--acc-txt)',
-              letterSpacing: '0.07em', textTransform: 'uppercase',
-            }}>
-              ERA+
-            </span>
-          </div>
           <h1 style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 34, color: 'var(--txt)', letterSpacing: '0.02em',

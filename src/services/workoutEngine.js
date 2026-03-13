@@ -31,7 +31,7 @@ const getSplit = (freq) => {
 // ─── BASE D'EXERCICES ────────────────────────────
 // Structure : id, name_fr, name_en, muscle_group, muscles, type, equipment, sets, reps, rest, rpe, exec_fr, exec_en, tip_fr, tip_en, level
 
-const EXERCISES = [
+export const EXERCISES = [
 
   // ════════════════════════════════
   // PUSH — PECS
@@ -673,10 +673,11 @@ const SESSION_BLOCKS = {
     { name: 'adductors', label_fr: 'Adducteurs', label_en: 'Adductors',primary: false },
   ],
   FULL: [
-    { name: 'chest',     label_fr: 'Pectoraux',  label_en: 'Chest',    primary: true  },
     { name: 'back',      label_fr: 'Dos',        label_en: 'Back',     primary: true  },
+    { name: 'glutes',    label_fr: 'Fessiers',   label_en: 'Glutes',   primary: true  },
+    { name: 'legs',      label_fr: 'Jambes',     label_en: 'Legs',     primary: true  },
+    { name: 'chest',     label_fr: 'Pectoraux',  label_en: 'Chest',    primary: false },
     { name: 'shoulders', label_fr: 'Épaules',    label_en: 'Shoulders',primary: false },
-    { name: 'legs',      label_fr: 'Jambes',     label_en: 'Legs',     primary: false },
   ],
 }
 
@@ -793,15 +794,15 @@ const distributeExCount = (focus, totalEx) => {
       return { quads: 3, hamstrings: 2, glutes: 2, calves: 1, adductors: 1 }
 
     case 'FULL':
-      if (totalEx <= 4) return { chest: 1, back: 1, shoulders: 1, legs: 1 }
-      if (totalEx === 5) return { chest: 1, back: 2, shoulders: 1, legs: 1 }
-      if (totalEx === 6) return { chest: 2, back: 2, shoulders: 1, legs: 1 }
-      if (totalEx === 7) return { chest: 2, back: 2, shoulders: 1, legs: 2 }
-      if (totalEx === 8) return { chest: 2, back: 2, shoulders: 2, legs: 2 }
-      return { chest: 2, back: 3, shoulders: 2, legs: 2 }
+      if (totalEx <= 4) return { chest: 1, back: 1, legs: 1, glutes: 1 }
+      if (totalEx === 5) return { chest: 1, back: 1, shoulders: 1, legs: 1, glutes: 1 }
+      if (totalEx === 6) return { chest: 1, back: 1, shoulders: 1, legs: 2, glutes: 1 }
+      if (totalEx === 7) return { chest: 1, back: 2, shoulders: 1, legs: 2, glutes: 1 }
+      if (totalEx === 8) return { chest: 2, back: 2, shoulders: 1, legs: 2, glutes: 1 }
+      return { chest: 2, back: 2, shoulders: 1, legs: 2, glutes: 2 }
 
     default:
-      return { chest: 2, back: 2, shoulders: 1, legs: 1 }
+      return { chest: 1, back: 1, shoulders: 1, legs: 2, glutes: 1 }
   }
 }
 

@@ -3,22 +3,31 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
+// Lit la session depuis localStorage de façon synchrone — 0ms, 0 réseau
+const getStoredUser = () => {
+  try {
+    const raw = localStorage.getItem('athlera-auth')
+    if (!raw) return null
+    const session = JSON.parse(raw)
+    // expires_at est un timestamp Unix en secondes
+    if (!session?.expires_at || session.expires_at < (Date.now() / 1000) + 60) return null
+    return session.user || null
+  } catch { return null }
+}
+
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user,    setUser]    = useState(getStoredUser)  // Init synchrone, 0 réseau
+  const [loading, setLoading] = useState(false)          // Jamais bloquant
   const [error,   setError]   = useState(null)
 
   useEffect(() => {
-    // Récupère la session existante au chargement
+    // Vérification/refresh en arrière-plan (ne bloque pas l'UI)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      setLoading(false)
     })
 
-    // Écoute les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
@@ -26,10 +35,7 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     setError(null)
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError('auth_error'); return { ok: false } }
     return { ok: true, userId: data.user?.id }
   }
@@ -37,18 +43,10 @@ export function AuthProvider({ children }) {
   const signUp = async (email, password, name) => {
     setError(null)
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-      }
+      email, password, options: { data: { name } }
     })
     if (error) {
-      if (error.message?.toLowerCase().includes('already')) {
-        setError('email_used')
-      } else {
-        setError('signup_error')
-      }
+      setError(error.message?.toLowerCase().includes('already') ? 'email_used' : 'signup_error')
       return { ok: false }
     }
     if (data?.user?.identities?.length === 0) {

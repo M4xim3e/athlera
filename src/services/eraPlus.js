@@ -22,7 +22,7 @@ export const createCheckoutSession = async () => {
     const priceId = import.meta.env.VITE_STRIPE_PRICE_ID
 
     const res = await fetch(
-      'https://qctqzmclzuabkgpbsijr.supabase.co/functions/v1/create-checkout',
+      '${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout',
       {
         method: 'POST',
         headers: {
@@ -51,7 +51,7 @@ export const cancelEraPlus = async () => {
     if (!session) return false
 
     const res = await fetch(
-      'https://qctqzmclzuabkgpbsijr.supabase.co/functions/v1/cancel-subscription',
+      '${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription',
       {
         method: 'POST',
         headers: {
