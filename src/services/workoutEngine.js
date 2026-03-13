@@ -31,7 +31,7 @@ const getSplit = (freq) => {
 // ─── BASE D'EXERCICES ────────────────────────────
 // Structure : id, name_fr, name_en, muscle_group, muscles, type, equipment, sets, reps, rest, rpe, exec_fr, exec_en, tip_fr, tip_en, level
 
-const EXERCISES = [
+export const EXERCISES = [
 
   // ════════════════════════════════
   // PUSH — PECS

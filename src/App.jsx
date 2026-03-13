@@ -4,7 +4,7 @@ import { LangProvider } from './contexts/LangContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProfileProvider, useProfile } from './contexts/ProfileContext'
 import { WorkoutProvider } from './contexts/WorkoutContext'
-import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext'
+import { SubscriptionProvider } from './contexts/SubscriptionContext'
 import SplashPage from './pages/SplashPage'
 import LangPickerPage from './pages/LangPickerPage'
 import AuthPage from './pages/AuthPage'
@@ -14,14 +14,12 @@ import WorkoutPage from './pages/WorkoutPage'
 import ProfilePage from './pages/ProfilePage'
 import CustomWorkoutPage from './pages/CustomWorkoutPage'
 import EraPlusPage from './pages/EraPlusPage'
-import EraWelcomePage from './pages/EraWelcomePage'
 import StatsPage from './pages/StatsPage'
 import ProgramsPage from './pages/ProgramsPage'
 
 function Router() {
   const { authed, loading: authLoading } = useAuth()
   const { hasProfile, loading: profLoading } = useProfile()
-  const { needsWelcome, loading: subLoading, refresh } = useSubscription()
 
   const [screen,      setScreen]      = useState('splash')
   const [splashDone,  setSplashDone]  = useState(false)
@@ -29,21 +27,12 @@ function Router() {
 
   const langPicked = !!localStorage.getItem('athlera_lang')
 
-  // Détecter retour Stripe
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('era_plus') === 'success') {
-      window.history.replaceState({}, '', '/')
-      setTimeout(() => refresh(), 2500)
-    }
-  }, [])
-
   // Attendre que tout soit chargé
   useEffect(() => {
-    if (!authLoading && !profLoading && !subLoading) {
+    if (!authLoading && !profLoading) {
       setLoadingDone(true)
     }
-  }, [authLoading, profLoading, subLoading])
+  }, [authLoading, profLoading])
 
   // ✅ FIX SESSION : Si déjà connecté au chargement → skip la splash
   useEffect(() => {
@@ -68,12 +57,8 @@ function Router() {
       setScreen('auth')
       return
     }
-    if (needsWelcome) {
-      setScreen('erawelcome')
-      return
-    }
     setScreen('dashboard')
-  }, [splashDone, loadingDone, authed, hasProfile, langPicked, needsWelcome])
+  }, [splashDone, loadingDone, authed, hasProfile, langPicked])
 
   const navigate = (dest) => setScreen(dest)
 
@@ -85,9 +70,6 @@ function Router() {
   }
   if (screen === 'auth') {
     return <AuthPage onDone={() => navigate('dashboard')} />
-  }
-  if (screen === 'erawelcome') {
-    return <EraWelcomePage onDone={() => navigate('dashboard')} />
   }
   if (screen === 'dashboard') {
     return <DashboardPage onNavigate={navigate} />

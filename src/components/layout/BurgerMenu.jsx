@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { useAuth }         from '../../contexts/AuthContext'
-import { useLang }         from '../../contexts/LangContext'
-import { useTheme }        from '../../contexts/ThemeContext'
-import { useProfile }      from '../../contexts/ProfileContext'
-import { useSubscription } from '../../contexts/SubscriptionContext'
-import { cancelEraPlus, getReferralCode } from '../../services/eraPlus'
+import { useAuth }    from '../../contexts/AuthContext'
+import { useLang }    from '../../contexts/LangContext'
+import { useTheme }   from '../../contexts/ThemeContext'
+import { useProfile } from '../../contexts/ProfileContext'
 import Icons from '../ui/Icons'
 
 const THEMES = [
@@ -18,45 +16,12 @@ export default function BurgerMenu({ onClose, onNavigate }) {
   const { t, lang, setLanguage } = useLang()
   const { mode, setTheme }       = useTheme()
   const { profile }              = useProfile()
-  const {
-    isPlus, isCancelled, periodEnd, refresh,
-  } = useSubscription()
 
-  const [view,              setView]              = useState('main')
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-  const [showReferral,      setShowReferral]      = useState(false)
-  const [referralCode,      setReferralCode]      = useState(null)
-  const [cancelling,        setCancelling]        = useState(false)
+  const [view, setView] = useState('main')
 
   const handleNav     = (dest) => { onClose(); onNavigate?.(dest) }
   const handleSignOut = async () => { onClose(); await signOut() }
   const currentTheme  = THEMES.find(th => th.id === mode) || THEMES[0]
-
-  // isPlus = abonnement actif (même si cancel_at_period_end)
-  // isCancelled = cancel_at_period_end = true → on masque le bouton "Annuler"
-  const canCancel = isPlus && !isCancelled
-
-  const fmtDate = (d) => d
-    ? new Date(d).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      })
-    : null
-
-  const handleCancel = async () => {
-    setCancelling(true)
-    const ok = await cancelEraPlus()
-    if (ok) await refresh()
-    setCancelling(false)
-    setShowCancelConfirm(false)
-  }
-
-  const handleReferral = async () => {
-    if (!referralCode) {
-      const data = await getReferralCode(user.id)
-      setReferralCode(data?.referral_code || null)
-    }
-    setShowReferral(true)
-  }
 
   return (
     <>
@@ -73,10 +38,10 @@ export default function BurgerMenu({ onClose, onNavigate }) {
         position: 'fixed', top: 0, right: 0,
         width: '78%', maxWidth: 320, height: '100dvh',
         background: 'var(--surface)',
-        borderLeft: `1.5px solid ${isPlus ? 'var(--acc)' : 'var(--border)'}`,
+        borderLeft: '1.5px solid var(--acc)',
         zIndex: 50, display: 'flex', flexDirection: 'column',
         animation: 'slideRight 0.28s cubic-bezier(0.16,1,0.3,1)',
-        boxShadow: isPlus ? 'var(--shd-acc)' : 'var(--shd-md)',
+        boxShadow: 'var(--shd-acc)',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
@@ -103,9 +68,9 @@ export default function BurgerMenu({ onClose, onNavigate }) {
                   fontSize: 20, color: 'var(--acc-txt)',
                   letterSpacing: '0.05em', lineHeight: 1,
                 }}>
-                  {view === 'theme' ? 'Thème' : view === 'era' ? 'ERA+' : (profile?.name || 'Athlète')}
+                  {view === 'theme' ? 'Thème' : (profile?.name || 'Athlète')}
                 </p>
-                {view === 'main' && isPlus && (
+                {view === 'main' && (
                   <span style={{
                     background: 'var(--acc)', borderRadius: 999,
                     padding: '2px 8px', fontSize: 9, fontWeight: 800,
@@ -138,38 +103,20 @@ export default function BurgerMenu({ onClose, onNavigate }) {
             overflowY: 'auto',
           }}>
 
-            {(isPlus || isCancelled) && (
-              <>
-                <SectionLabel label="ERA+" />
-                <MenuItem
-                  icon={<Icons.activity size={17} color="var(--acc-txt)" />}
-                  label={lang === 'fr' ? 'Statistiques' : 'Statistics'}
-                  onClick={() => handleNav('stats')}
-                  accent
-                />
-                <MenuItem
-                  icon={<Icons.calendar size={17} color="var(--acc-txt)" />}
-                  label={lang === 'fr' ? 'Programmes' : 'Programs'}
-                  onClick={() => handleNav('programs')}
-                  accent
-                />
-                {isPlus && !isCancelled && (
-                  <MenuItem
-                    icon={<Icons.users size={17} color="var(--acc-txt)" />}
-                    label={lang === 'fr' ? 'Inviter un ami' : 'Invite a friend'}
-                    onClick={handleReferral}
-                    accent
-                  />
-                )}
-                <MenuItem
-                  icon={<Icons.bolt size={17} color={isPlus ? 'var(--acc-txt)' : 'var(--txt-sub)'} />}
-                  label={lang === 'fr' ? 'Gérer ERA+' : 'Manage ERA+'}
-                  onClick={() => setView('era')}
-                  accent={isPlus}
-                />
-                <Divider />
-              </>
-            )}
+            <SectionLabel label="ERA+" />
+            <MenuItem
+              icon={<Icons.activity size={17} color="var(--acc-txt)" />}
+              label={lang === 'fr' ? 'Statistiques' : 'Statistics'}
+              onClick={() => handleNav('stats')}
+              accent
+            />
+            <MenuItem
+              icon={<Icons.calendar size={17} color="var(--acc-txt)" />}
+              label={lang === 'fr' ? 'Programmes' : 'Programs'}
+              onClick={() => handleNav('programs')}
+              accent
+            />
+            <Divider />
 
             <SectionLabel label={lang === 'fr' ? 'Navigation' : 'Navigation'} />
             <MenuItem
@@ -243,18 +190,6 @@ export default function BurgerMenu({ onClose, onNavigate }) {
 
             <Divider />
 
-            {!isPlus && !isCancelled && (
-              <button onClick={() => handleNav('eraplus')} style={{
-                width: '100%', background: 'var(--acc)', border: 'none',
-                borderRadius: 14, padding: '13px', cursor: 'pointer',
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 16, letterSpacing: '0.05em', color: 'var(--txt-inv)',
-                marginBottom: 6,
-              }}>
-                ✦ {lang === 'fr' ? 'Passer à ERA+' : 'Upgrade to ERA+'}
-              </button>
-            )}
-
             <MenuItem
               icon={<Icons.logout size={17} color="var(--err)" />}
               label={t('menuOut')}
@@ -315,244 +250,13 @@ export default function BurgerMenu({ onClose, onNavigate }) {
           </div>
         )}
 
-        {/* ── VUE ERA+ ── */}
-        {view === 'era' && (
-          <div style={{
-            flex: 1, padding: '16px 12px',
-            display: 'flex', flexDirection: 'column', gap: 10,
-            overflowY: 'auto',
-          }}>
-            <div style={{
-              background: isPlus ? 'var(--acc-dim)' : 'rgba(255,159,10,0.08)',
-              border: `1px solid ${isPlus ? 'var(--acc)' : 'rgba(255,159,10,0.3)'}`,
-              borderRadius: 16, padding: '16px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Icons.bolt size={16} color={isPlus ? 'var(--acc-txt)' : 'var(--warn)'} />
-                <span style={{
-                  fontSize: 12, fontWeight: 800, letterSpacing: '0.07em',
-                  textTransform: 'uppercase',
-                  color: isPlus ? 'var(--acc-txt)' : 'var(--warn)',
-                }}>
-                  {isCancelled
-                    ? (lang === 'fr' ? 'Annulé — accès maintenu' : 'Cancelled — access maintained')
-                    : (lang === 'fr' ? 'Actif' : 'Active')}
-                </span>
-              </div>
-              {periodEnd && (
-                <p style={{ fontSize: 13, color: 'var(--txt-sub)' }}>
-                  {isCancelled
-                    ? (lang === 'fr' ? "Accès jusqu'au" : 'Access until')
-                    : (lang === 'fr' ? 'Renouvellement le' : 'Renewal on')}
-                  {' '}
-                  <strong style={{ color: 'var(--txt)' }}>
-                    {fmtDate(periodEnd)}
-                  </strong>
-                </p>
-              )}
-            </div>
-
-            {isPlus && (
-              <>
-                <MenuItem
-                  icon={<Icons.activity size={17} color="var(--acc-txt)" />}
-                  label={lang === 'fr' ? 'Statistiques' : 'Statistics'}
-                  onClick={() => handleNav('stats')}
-                  accent
-                />
-                <MenuItem
-                  icon={<Icons.calendar size={17} color="var(--acc-txt)" />}
-                  label={lang === 'fr' ? 'Programmes' : 'Programs'}
-                  onClick={() => handleNav('programs')}
-                  accent
-                />
-                {!isCancelled && (
-                  <MenuItem
-                    icon={<Icons.users size={17} color="var(--acc-txt)" />}
-                    label={lang === 'fr' ? 'Inviter un ami' : 'Invite a friend'}
-                    onClick={handleReferral}
-                    accent
-                  />
-                )}
-                {/* Bouton annulation — uniquement si PAS encore annulé */}
-                {canCancel && (
-                  <>
-                    <Divider />
-                    <MenuItem
-                      icon={<Icons.x size={17} color="var(--err)" />}
-                      label={lang === 'fr' ? 'Annuler ERA+' : 'Cancel ERA+'}
-                      onClick={() => setShowCancelConfirm(true)}
-                      danger
-                    />
-                  </>
-                )}
-              </>
-            )}
-
-            {isCancelled && (
-              <button
-                onClick={() => handleNav('eraplus')}
-                style={{
-                  width: '100%', background: 'var(--acc)', border: 'none',
-                  borderRadius: 14, padding: '14px', cursor: 'pointer',
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 17, letterSpacing: '0.05em', color: 'var(--txt-inv)',
-                }}
-              >
-                {lang === 'fr' ? 'Renouveler ERA+' : 'Renew ERA+'}
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Footer */}
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center' }}>
-            ATHLERA {isPlus ? '✦ ERA+' : ''} · {currentTheme.label} · v0.6
+            ATHLERA ✦ ERA+ · {currentTheme.label} · v0.6
           </p>
         </div>
       </div>
-
-      {/* ── MODAL ANNULATION ── */}
-      {showCancelConfirm && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 60,
-          background: 'var(--overlay)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          padding: '0 16px calc(env(safe-area-inset-bottom, 0px) + 16px)',
-        }}>
-          <div style={{
-            width: '100%', maxWidth: 430,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 24, padding: '28px 24px',
-            animation: 'slideUp 0.22s cubic-bezier(0.16,1,0.3,1)',
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{
-                width: 56, height: 56, background: 'rgba(255,69,58,0.1)',
-                borderRadius: 18, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 14px',
-              }}>
-                <Icons.x size={24} color="var(--err)" />
-              </div>
-              <h3 style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 26, color: 'var(--txt)', marginBottom: 10,
-              }}>
-                {lang === 'fr' ? 'Annuler ERA+ ?' : 'Cancel ERA+?'}
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--txt-sub)', lineHeight: 1.6 }}>
-                {lang === 'fr'
-                  ? `Tu conserveras l'accès ERA+ jusqu'au ${fmtDate(periodEnd)}. Après cette date, ton compte repassera en version gratuite.`
-                  : `You'll keep ERA+ access until ${fmtDate(periodEnd)}. After that, your account will revert to the free version.`}
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                style={{
-                  background: 'var(--err)', border: 'none', borderRadius: 14,
-                  padding: '14px', cursor: 'pointer',
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 17, letterSpacing: '0.04em', color: '#fff',
-                  opacity: cancelling ? 0.7 : 1, transition: 'opacity 0.15s',
-                }}
-              >
-                {cancelling
-                  ? (lang === 'fr' ? 'Annulation...' : 'Cancelling...')
-                  : (lang === 'fr' ? "Confirmer l'annulation" : 'Confirm cancellation')}
-              </button>
-              <button
-                onClick={() => setShowCancelConfirm(false)}
-                style={{
-                  background: 'var(--surface-up)', border: '1px solid var(--border)',
-                  borderRadius: 14, padding: '14px', cursor: 'pointer',
-                  fontFamily: 'inherit', fontSize: 14,
-                  fontWeight: 600, color: 'var(--txt-sub)',
-                }}
-              >
-                {lang === 'fr' ? 'Garder ERA+' : 'Keep ERA+'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL REFERRAL ── */}
-      {showReferral && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 60,
-          background: 'var(--overlay)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          padding: '0 16px calc(env(safe-area-inset-bottom, 0px) + 16px)',
-        }}>
-          <div style={{
-            width: '100%', maxWidth: 430,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 24, padding: '28px 24px',
-            animation: 'slideUp 0.22s cubic-bezier(0.16,1,0.3,1)',
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{
-                width: 56, height: 56, background: 'var(--acc-dim)',
-                borderRadius: 18, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 14px',
-              }}>
-                <Icons.users size={24} color="var(--acc-txt)" />
-              </div>
-              <h3 style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 26, color: 'var(--txt)', marginBottom: 10,
-              }}>
-                {lang === 'fr' ? 'Invite un ami' : 'Invite a friend'}
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--txt-sub)', lineHeight: 1.5, marginBottom: 16 }}>
-                {lang === 'fr'
-                  ? 'Partage ton code unique à tes amis pour leur faire découvrir Athlera.'
-                  : 'Share your unique code with friends to introduce them to Athlera.'}
-              </p>
-              <div style={{
-                background: 'var(--acc-dim)', border: '2px solid var(--acc)',
-                borderRadius: 16, padding: '18px',
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 36, color: 'var(--acc-txt)', letterSpacing: '0.15em',
-              }}>
-                {referralCode?.toUpperCase() || '- - - - - -'}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={async () => {
-                  try { await navigator.clipboard.writeText(referralCode || '') } catch (e) {}
-                }}
-                style={{
-                  flex: 1, background: 'var(--acc)', border: 'none',
-                  borderRadius: 14, padding: '13px', cursor: 'pointer',
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 16, color: 'var(--txt-inv)',
-                }}
-              >
-                {lang === 'fr' ? 'Copier' : 'Copy'}
-              </button>
-              <button
-                onClick={() => setShowReferral(false)}
-                style={{
-                  flex: 1, background: 'var(--surface-up)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 14, padding: '13px', cursor: 'pointer',
-                  fontFamily: 'inherit', fontSize: 14,
-                  fontWeight: 600, color: 'var(--txt-sub)',
-                }}
-              >
-                {lang === 'fr' ? 'Fermer' : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
