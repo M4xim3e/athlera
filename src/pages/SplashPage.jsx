@@ -13,7 +13,7 @@ export default function SplashPage({ onDone }) {
         return p + 10
       })
     }, 60)
-    const timer = setTimeout(() => onDone(), 700)
+    const timer = setTimeout(() => onDone(), 400)
     return () => {
       clearInterval(progressInterval)
       clearTimeout(timer)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LangProvider } from './contexts/LangContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -21,49 +21,34 @@ function Router() {
   const { authed, loading: authLoading } = useAuth()
   const { hasProfile, loading: profLoading } = useProfile()
 
-  const [screen,      setScreen]      = useState('splash')
-  const [splashDone,  setSplashDone]  = useState(false)
-  const [loadingDone, setLoadingDone] = useState(false)
-
+  const [screen, setScreen] = useState('splash')
   const langPicked = !!localStorage.getItem('athlera_lang')
 
-  // Attendre que tout soit chargé
-  useEffect(() => {
-    if (!authLoading && !profLoading) {
-      setLoadingDone(true)
-    }
-  }, [authLoading, profLoading])
+  // Auth et profil sont maintenant synchrones depuis localStorage
+  // On attend juste que les 2 soient resolved (= false = quasi-instantane)
+  const ready = !authLoading && !profLoading
 
-  // ✅ FIX SESSION : Si déjà connecté au chargement → skip la splash
   useEffect(() => {
-    if (!loadingDone) return
-    if (authed && hasProfile) {
-      setSplashDone(true)
-    }
-  }, [loadingDone])
+    if (!ready) return
 
-  // Routing principal
-  useEffect(() => {
-    if (!splashDone || !loadingDone) return
-    if (!langPicked) {
-      setScreen('langpicker')
+    // Utilisateur connecte avec profil -> skip splash directement
+    if (authed && hasProfile && screen === 'splash') {
+      setScreen('dashboard')
       return
     }
-    if (!authed) {
-      setScreen('auth')
-      return
-    }
-    if (!hasProfile) {
-      setScreen('auth')
-      return
-    }
+  }, [ready])
+
+  // Routing apres splash
+  const handleSplashDone = () => {
+    if (!langPicked) { setScreen('langpicker'); return }
+    if (!authed || !hasProfile) { setScreen('auth'); return }
     setScreen('dashboard')
-  }, [splashDone, loadingDone, authed, hasProfile, langPicked])
+  }
 
   const navigate = (dest) => setScreen(dest)
 
   if (screen === 'splash') {
-    return <SplashPage onDone={() => setSplashDone(true)} />
+    return <SplashPage onDone={handleSplashDone} />
   }
   if (screen === 'langpicker') {
     return <LangPickerPage onDone={() => navigate('auth')} />
